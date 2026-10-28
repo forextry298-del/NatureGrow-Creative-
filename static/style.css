@@ -54,3 +54,34 @@ main{padding:10px}
 .bottom-nav svg{width:25px;height:25px}
 .bottom-nav small{font-size:11px}
 @media(max-width:390px){main{padding:8px}.top{height:56px}.top b{font-size:17px}.product{padding:10px;gap:8px}.product img{width:28%;border-radius:10px}.row{font-size:12px}.row strong{font-size:13px}.info p{font-size:11px;margin:5px 0}.invest-btn{font-size:11px;padding:8px 8px;min-width:0}.bottom-nav{height:66px}.bottom-nav svg{width:24px;height:24px}.bottom-nav small{font-size:10px}}
+
+
+/* NatureGrow reference theme: compact black/charcoal cards with fresh green accents */
+html,body{background:#111216;color:#f6f7f8}
+body{max-width:760px}
+.top{background:#111216;border-bottom:1px solid #292b30}
+.top b{font-size:19px;letter-spacing:-.25px}
+.top .back{background:#24262b;border:1px solid #3a3c42;border-radius:12px;justify-content:center}
+main{padding:12px}
+.card,.balance,.product,.shortcuts a{background:#24262b;border-color:#3c3e44;box-shadow:0 2px 7px #0002}
+.card,.balance,.product{border-radius:17px}
+.hero{background:linear-gradient(0deg,#101216df,#10121618),url('/static/images/naturegrow-team-solar.jpg') center/cover;border:1px solid #363940}
+.hero h1{font-size:21px}
+.hero p,.muted,.balance small{color:#a8b0ad}
+.blue,.row strong{color:#83d991}
+.primary{background:#78d18d;color:#101712}
+.pill,.dark{background:#17191d;border:1px solid #303238}
+.invest-btn{background:#78d18d;color:#102016;border-radius:24px;font-size:12px;font-weight:700}
+.notice{background:#202d24;border-left-color:#78d18d}
+.notice.error{border-left-color:#ff6875}
+.card input,.amounts button,.network-pills span,.invite,.tag{background:#1a1c20;border-color:#3a3c42}
+.card input:focus{outline:1px solid #78d18d}
+.card a{color:#8ce19b}
+.summary,.wide{background:#191b20}
+.bottom-nav{height:72px;max-width:760px;background:#24262b;border:1px solid #3b3d43;border-bottom:0;border-radius:17px 17px 0 0;padding:3px 5px 0;box-shadow:0 -2px 12px #0002}
+.bottom-nav a{color:#9b9da3;font-size:11px;gap:3px}
+.bottom-nav svg{width:26px;height:26px;stroke-width:1.8}
+.bottom-nav a.active{color:#78d18d}
+.bottom-nav a.active svg{stroke-width:2.4}
+.menu a{border-bottom-color:#3b3d43}
+@media(max-width:390px){main{padding:9px}.top{height:56px}.top b{font-size:17px}.hero{height:145px}.product{padding:10px;gap:9px}.product img{width:29%;max-width:110px}.row{font-size:12px}.row strong{font-size:13px}.info p{font-size:10.5px}.invest-btn{font-size:11px;padding:8px 10px}.bottom-nav{height:68px}.bottom-nav svg{width:24px;height:24px}}
