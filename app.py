@@ -1,120 +1,138 @@
-import os
-import sqlite3
+import os,sqlite3,secrets
+from datetime import datetime,date
 from functools import wraps
-from flask import Flask, render_template, request, redirect, url_for, session, flash, g
-from werkzeug.security import generate_password_hash, check_password_hash
-
-app = Flask(__name__)
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-this-secret-before-deploying")
-DB_PATH = os.environ.get("DATABASE_PATH", os.path.join(os.path.dirname(__file__), "naturegrow.db"))
-
-def db():
-    if "db" not in g:
-        g.db = sqlite3.connect(DB_PATH)
-        g.db.row_factory = sqlite3.Row
-    return g.db
-
-@app.teardown_appcontext
-def close_db(_error=None):
-    conn = g.pop("db", None)
-    if conn is not None:
-        conn.close()
-
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            full_name TEXT NOT NULL,
-            username TEXT NOT NULL UNIQUE,
-            phone TEXT NOT NULL,
-            email TEXT NOT NULL UNIQUE,
-            password_hash TEXT NOT NULL,
-            interest TEXT NOT NULL,
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    conn.commit()
-    conn.close()
-
-def login_required(view):
-    @wraps(view)
-    def wrapped(*args, **kwargs):
-        if not session.get("user_id"):
-            flash("Please sign in to continue.", "info")
-            return redirect(url_for("login"))
-        return view(*args, **kwargs)
-    return wrapped
-
+from flask import Flask,render_template,request,redirect,url_for,session,flash
+from werkzeug.security import generate_password_hash,check_password_hash
+app=Flask(__name__); app.secret_key=os.environ.get("SECRET_KEY","change-me-before-deployment")
+DB=os.environ.get("DATABASE_PATH","naturegrow.db")
+P=[{"id":1,"name":"Plot-1","price":45000,"daily":9000,"image":"farm1.jpg"},{"id":2,"name":"Plot-2","price":60000,"daily":12000,"image":"farm2.jpg"},{"id":3,"name":"Plot-3","price":100000,"daily":20000,"image":"farm3.jpg"},{"id":4,"name":"Plot-4","price":250000,"daily":31000,"image":"farm1.jpg"},{"id":5,"name":"Plot-5","price":500000,"daily":55000,"image":"farm2.jpg"},{"id":6,"name":"Plot-6","price":1000000,"daily":160000,"image":"farm3.jpg"},{"id":7,"name":"Plot-7","price":2000000,"daily":220000,"image":"farm1.jpg"},{"id":8,"name":"Plot-8","price":5000000,"daily":434200,"image":"farm2.jpg"}]
+def con(): 
+ c=sqlite3.connect(DB); c.row_factory=sqlite3.Row; return c
+with con() as c:
+ c.executescript("""CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY,username TEXT UNIQUE,phone TEXT,password TEXT,invite TEXT UNIQUE,referrer INTEGER,balance INTEGER DEFAULT 0,created TEXT);
+ CREATE TABLE IF NOT EXISTS tx(id INTEGER PRIMARY KEY,user_id INTEGER,kind TEXT,amount INTEGER,note TEXT,status TEXT,created TEXT);
+ CREATE TABLE IF NOT EXISTS projects(id INTEGER PRIMARY KEY,user_id INTEGER,product TEXT,price INTEGER,daily INTEGER,created TEXT);
+ CREATE TABLE IF NOT EXISTS checkins(user_id INTEGER,day TEXT,UNIQUE(user_id,day));
+ CREATE TABLE IF NOT EXISTS requests(id INTEGER PRIMARY KEY,user_id INTEGER,kind TEXT,amount INTEGER,phone TEXT,name TEXT,status TEXT,created TEXT);""")
+def user():
+ if "uid" not in session:return None
+ with con() as c:return c.execute("SELECT * FROM users WHERE id=?",(session["uid"],)).fetchone()
+def need(f):
+ @wraps(f)
+ def w(*a,**k):
+  if not user():return redirect(url_for("login"))
+  return f(*a,**k)
+ return w
+def money(x):return "UGX "+format(int(x),",")
+@app.context_processor
+def globals():return {"active_user":user(),"money":money,"products":P}
 @app.route("/")
-def index():
-    return redirect(url_for("login"))
-
-@app.route("/signup", methods=["GET", "POST"])
-def signup():
-    if request.method == "POST":
-        full_name = request.form.get("full_name", "").strip()
-        username = request.form.get("username", "").strip()
-        phone = request.form.get("phone", "").strip()
-        email = request.form.get("email", "").strip().lower()
-        password = request.form.get("password", "")
-        interest = request.form.get("interest", "").strip()
-
-        if not all([full_name, username, phone, email, password, interest]):
-            flash("Please complete every field.", "error")
-            return render_template("signup.html")
-        if len(password) < 8:
-            flash("Use a password with at least 8 characters.", "error")
-            return render_template("signup.html")
-        try:
-            cur = db().execute(
-                "INSERT INTO users (full_name, username, phone, email, password_hash, interest) VALUES (?, ?, ?, ?, ?, ?)",
-                (full_name, username, phone, email, generate_password_hash(password), interest)
-            )
-            db().commit()
-            session["user_id"] = cur.lastrowid
-            session["full_name"] = full_name
-            return redirect(url_for("dashboard"))
-        except sqlite3.IntegrityError:
-            flash("That username or email is already registered.", "error")
-    return render_template("signup.html")
-
-@app.route("/login", methods=["GET", "POST"])
+def index():return redirect(url_for("dashboard") if user() else url_for("login"))
+@app.route("/register",methods=["GET","POST"])
+def register():
+ if request.method=="POST":
+  n=request.form.get("username","").strip(); ph=request.form.get("phone","").strip(); pw=request.form.get("password",""); cp=request.form.get("confirm_password",""); inv=request.form.get("invite","").strip().upper()
+  if not n or not ph or len(pw)<6 or pw!=cp:flash("Check username, phone and matching passwords (minimum 6 characters).","error")
+  else:
+   try:
+    with con() as c:
+     r=c.execute("SELECT id FROM users WHERE invite=?",(inv,)).fetchone() if inv else None
+     cur=c.execute("INSERT INTO users(username,phone,password,invite,referrer,created) VALUES(?,?,?,?,?,?)",(n,ph,generate_password_hash(pw),secrets.token_hex(4).upper(),r["id"] if r else None,datetime.now().isoformat()))
+     uid=cur.lastrowid;c.execute("INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)",(uid,"Account",0,"Account created","Completed",datetime.now().isoformat()))
+    session["uid"]=uid;return redirect(url_for("dashboard"))
+   except sqlite3.IntegrityError:flash("Username already exists.","error")
+ return render_template("auth.html",mode="register")
+@app.route("/login",methods=["GET","POST"])
 def login():
-    if request.method == "POST":
-        identifier = request.form.get("email", "").strip().lower()
-        password = request.form.get("password", "")
-        user = db().execute(
-            "SELECT * FROM users WHERE lower(email)=? OR lower(username)=?",
-            (identifier, identifier)
-        ).fetchone()
-        if user and check_password_hash(user["password_hash"], password):
-            session.clear()
-            session["user_id"] = user["id"]
-            session["full_name"] = user["full_name"]
-            return redirect(url_for("dashboard"))
-        flash("The email/username or password is incorrect.", "error")
-    return render_template("login.html")
-
-@app.route("/dashboard")
-@login_required
-def dashboard():
-    user = db().execute("SELECT full_name, username, email, phone, interest, created_at FROM users WHERE id=?",
-                        (session["user_id"],)).fetchone()
-    return render_template("dashboard.html", user=user)
-
+ if request.method=="POST":
+  with con() as c:u=c.execute("SELECT * FROM users WHERE username=?",(request.form.get("username","").strip(),)).fetchone()
+  if u and check_password_hash(u["password"],request.form.get("password","")):session.clear();session["uid"]=u["id"];return redirect(url_for("dashboard"))
+  flash("Incorrect username or password.","error")
+ return render_template("auth.html",mode="login")
 @app.route("/logout")
-def logout():
-    session.clear()
-    flash("You have signed out.", "info")
-    return redirect(url_for("login"))
-
-@app.route("/health")
-def health():
-    return {"status": "ok", "app": "NatureGrow Creative"}
-
-with app.app_context():
-    init_db()
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "5000")), debug=False)
+def logout():session.clear();return redirect(url_for("login"))
+@app.route("/dashboard")
+@need
+def dashboard():
+ u=user()
+ with con() as c:active=c.execute("SELECT COUNT(*) n FROM projects WHERE user_id=?",(u["id"],)).fetchone()["n"]
+ return render_template("dashboard.html",u=u,active=active)
+@app.route("/products")
+@need
+def product_list():return render_template("products.html")
+@app.route("/invest/<int:pid>",methods=["POST"])
+@need
+def invest(pid):
+ u=user();p=next((x for x in P if x["id"]==pid),None)
+ if not p: return redirect(url_for("product_list"))
+ if u["balance"]<p["price"]:flash("Insufficient demo balance. Submit a demo deposit request first.","error");return redirect(url_for("product_list"))
+ now=datetime.now().isoformat()
+ with con() as c:
+  c.execute("UPDATE users SET balance=balance-? WHERE id=?",(p["price"],u["id"]));c.execute("INSERT INTO projects(user_id,product,price,daily,created) VALUES(?,?,?,?,?)",(u["id"],p["name"],p["price"],p["daily"],now));c.execute("INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)",(u["id"],"Demo purchase",-p["price"],p["name"],"Completed",now))
+ flash("Demo project purchased.");return redirect(url_for("projects"))
+@app.route("/projects")
+@need
+def projects():
+ with con() as c:rows=c.execute("SELECT * FROM projects WHERE user_id=? ORDER BY id DESC",(user()["id"],)).fetchall()
+ return render_template("projects.html",rows=rows)
+@app.route("/team")
+@need
+def team():
+ u=user()
+ with con() as c:refs=c.execute("SELECT username,created FROM users WHERE referrer=?",(u["id"],)).fetchall()
+ return render_template("team.html",refs=refs,invite=request.url_root.rstrip("/")+"/register?invite="+u["invite"])
+@app.route("/deposit",methods=["GET","POST"])
+@need
+def deposit():
+ if request.method=="POST":
+  try:a=int(request.form.get("amount","0"))
+  except:a=0
+  ph=request.form.get("phone","").strip()
+  if a<5000 or not ph:flash("Enter at least UGX 5,000 and a phone number.","error")
+  else:
+   with con() as c:c.execute("INSERT INTO requests(user_id,kind,amount,phone,status,created) VALUES(?,?,?,?,?,?)",(user()["id"],"Deposit",a,ph,"Pending (demo)",datetime.now().isoformat()))
+   flash("Request recorded as demo only. No payment was made and balance was not credited.");return redirect(url_for("history"))
+ return render_template("deposit.html")
+@app.route("/withdraw",methods=["GET","POST"])
+@need
+def withdraw():
+ u=user()
+ if request.method=="POST":
+  try:a=int(request.form.get("amount","0"))
+  except:a=0
+  ph=request.form.get("phone","").strip();name=request.form.get("name","").strip()
+  if not name or not ph or a<5000 or a%1000:flash("Enter name, phone and amount of at least UGX 5,000 in multiples of 1,000.","error")
+  elif a>u["balance"]:flash("Insufficient demo balance.","error")
+  else:
+   with con() as c:
+    c.execute("UPDATE users SET balance=balance-? WHERE id=?",(a,u["id"]));c.execute("INSERT INTO requests(user_id,kind,amount,phone,name,status,created) VALUES(?,?,?,?,?,?,?)",(u["id"],"Withdrawal",a,ph,name,"Pending (demo)",datetime.now().isoformat()));c.execute("INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)",(u["id"],"Withdrawal",-a,"Demo withdrawal request","Pending",datetime.now().isoformat()))
+   flash("Demo withdrawal recorded. No money was sent.");return redirect(url_for("history"))
+ return render_template("withdraw.html",u=u)
+@app.route("/checkin",methods=["GET","POST"])
+@need
+def checkin():
+ today=date.today().isoformat();u=user()
+ with con() as c:
+  claimed=c.execute("SELECT 1 FROM checkins WHERE user_id=? AND day=?",(u["id"],today)).fetchone() is not None
+  if request.method=="POST" and not claimed:
+   now=datetime.now().isoformat();c.execute("INSERT INTO checkins VALUES(?,?)",(u["id"],today));c.execute("UPDATE users SET balance=balance+1000 WHERE id=?",(u["id"],));c.execute("INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)",(u["id"],"Bonus",1000,"Daily demo check-in","Completed",now));claimed=True;flash("UGX 1,000 demo bonus added.")
+ return render_template("checkin.html",claimed=claimed)
+@app.route("/history")
+@need
+def history():
+ with con() as c:rows=c.execute("SELECT * FROM tx WHERE user_id=? ORDER BY id DESC",(user()["id"],)).fetchall();reqs=c.execute("SELECT * FROM requests WHERE user_id=? ORDER BY id DESC",(user()["id"],)).fetchall()
+ return render_template("history.html",rows=rows,reqs=reqs)
+@app.route("/support")
+@need
+def support():return render_template("support.html")
+@app.route("/settings",methods=["GET","POST"])
+@need
+def settings():
+ if request.method=="POST":
+  p=request.form.get("password","");q=request.form.get("confirm","")
+  if len(p)<6 or p!=q:flash("Passwords must match and be at least 6 characters.","error")
+  else:
+   with con() as c:c.execute("UPDATE users SET password=? WHERE id=?",(generate_password_hash(p),user()["id"]))
+   flash("Password updated.");return redirect(url_for("settings"))
+ return render_template("settings.html")
+if __name__=="__main__":app.run(debug=True)

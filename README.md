@@ -1,30 +1,12 @@
 # NatureGrow Creative
+Mobile-first Flask demo inspired by the screenshots. Includes registration/login, dashboard, product cards, demo purchases, referral/team page, demo deposit/withdrawal requests, daily check-in, transaction history, support and password settings.
 
-A mobile-first Flask account platform styled to match the supplied NatureGrow registration and login references. The login page uses the supplied farm photograph as its wide hero image.
+Run: `pip install -r requirements.txt` then `python app.py`; open `http://127.0.0.1:5000`.
 
-## Run locally
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-export SECRET_KEY="$(python -c 'import secrets; print(secrets.token_hex(32))')"
-python app.py
-```
-Open `http://127.0.0.1:5000`.
+Render build command: `pip install -r requirements.txt`; start command: `gunicorn app:app`; leave Root Directory blank if these files are in repository root.
 
-## Deploy
-The included `Procfile` and `render.yaml` are configured for Render. For a persistent database, attach a disk mounted at `/var/data` and set `DATABASE_PATH=/var/data/naturegrow.db`. Set a unique `SECRET_KEY` in the hosting environment.
-
-## Included
-- Registration with full name, username, phone, email, password, and farm location/interest
-- Login with email or username and password
-- Password hashing, duplicate account checks, session login/logout
-- Responsive mobile-first pages and password visibility toggles
-- Login hero using `static/images/farm.jpg`
-
-This initial build covers the account screens shown in the references. It does not yet include farm investments, payments, payouts, or earnings functionality.
+Important: this is a demo only. Deposits do not process payments or credit balances; withdrawals are simulated; income numbers are illustrative and not guaranteed. Do not collect real payments or market returns as guaranteed.
 
 
-## Mobile layout
-The authentication screens use compact mobile-first sizing. The viewport disables user pinch-zoom on the site as requested; users can still change browser-level accessibility settings.
-# NatureGrow-Creative-
+## Image update
+The homepage hero and product cards use the supplied NatureGrow farming/solar-team image, cropped into local assets under `static/images/`. The app remains a demo: deposits are requests only, withdrawals are not paid out, and product figures are illustrative rather than guaranteed returns.
