@@ -3,3 +3,54 @@
 /* Extra-compact mobile sizing across every page */
 html{font-size:12px}body{font-size:12px;padding-bottom:72px}.top{height:52px;gap:9px;padding:0 12px}.top .back{width:26px;height:26px}.top .back svg{width:23px;height:23px}.top b{font-size:16px;line-height:1.15}main{padding:8px}.hero{height:135px;padding:11px;border-radius:13px}.hero h1{font-size:18px}.hero p{font-size:11px}.card,.balance{padding:10px;border-radius:14px;margin:7px 0 9px}.compact-card{padding:10px}.compact-card h2,.card h2{font-size:14px;margin-bottom:8px}.balance h1{font-size:18px}.balance-line,.row{font-size:12px}.row strong{font-size:12px}.balance small,.muted{font-size:10px}.section-title{font-size:15px;margin:10px 2px 6px}.product{gap:8px;padding:9px;border-radius:14px;margin:7px 0 9px}.product img{width:27%;max-width:104px;border-radius:10px}.info p{font-size:10px;line-height:1.25;margin:4px 0}.invest-btn{font-size:10px;padding:7px 12px;min-width:94px}.pill,.dark,.primary{padding:8px 11px;font-size:11px}.notice{padding:8px 9px;font-size:11px;margin:6px 0 8px}.shortcuts{gap:5px;margin:10px 0}.shortcuts a{font-size:18px;padding:8px 2px;border-radius:10px}.shortcuts small{font-size:9px}.card label{font-size:11px;margin:8px 0}.card input{padding:9px;font-size:12px;border-radius:9px}.amounts{gap:5px;margin:8px 0 10px}.amounts button{padding:8px 2px;font-size:10px}.network-pills span{font-size:10px;padding:7px 3px}.tiny{font-size:10px}.invite{font-size:10px;padding:8px}.summary{padding:12px;margin:9px 0;border-radius:14px}.stats{font-size:17px}.stats small{font-size:9px;margin-top:4px}.tag{font-size:9px;padding:5px 6px}.hist p{font-size:10px}.hist small{font-size:9px}.empty{padding:35px 8px;font-size:13px}.menu a{padding:10px 0;font-size:12px}.bottom-nav{height:62px;padding-bottom:0}.bottom-nav a{font-size:10px;gap:3px}.bottom-nav svg{width:23px;height:23px}.bottom-nav small{font-size:10px}
 @media(max-width:390px){main{padding:7px}.top{height:50px}.top b{font-size:15px}.product{padding:8px;gap:7px}.product img{width:27%;border-radius:9px}.row,.row strong{font-size:11px}.info p{font-size:9.5px;margin:4px 0}.invest-btn{font-size:10px;padding:7px 5px}.bottom-nav{height:60px}.bottom-nav svg{width:22px;height:22px}.bottom-nav small{font-size:9px}}
+
+
+/* Balanced compact layout: slightly larger and easier to read */
+html{font-size:14px}
+body{font-size:13px;padding-bottom:80px}
+.top{height:58px;gap:11px;padding:0 14px}
+.top .back{width:29px;height:29px}
+.top .back svg{width:25px;height:25px}
+.top b{font-size:18px;line-height:1.2}
+main{padding:10px}
+.hero{height:150px;padding:13px;border-radius:15px}
+.hero h1{font-size:21px;margin-bottom:6px}
+.hero p{font-size:12px}
+.card,.balance{padding:12px;border-radius:16px;margin:8px 0 10px}
+.compact-card{padding:12px}
+.compact-card h2,.card h2{font-size:16px;margin-bottom:9px}
+.balance h1{font-size:20px}
+.balance-line{font-size:12px}
+.balance small,.muted{font-size:11px}
+.section-title{font-size:17px;margin:12px 2px 8px}
+.product{gap:10px;padding:11px;border-radius:16px;margin:8px 0 11px}
+.product img{width:29%;max-width:115px;border-radius:11px}
+.row{font-size:13px;line-height:1.3}
+.row strong{font-size:14px}
+.info p{font-size:11.5px;line-height:1.35;margin:5px 0}
+.invest-btn{font-size:12px;padding:8px 13px;min-width:105px}
+.pill,.dark,.primary{padding:9px 13px;font-size:12px}
+.notice{padding:9px 11px;font-size:12px;margin:7px 0 9px}
+.shortcuts{gap:6px;margin:12px 0}
+.shortcuts a{font-size:20px;padding:9px 2px;border-radius:11px}
+.shortcuts small{font-size:10px}
+.card label{font-size:12px;margin:9px 0}
+.card input{padding:10px;font-size:13px;border-radius:10px}
+.amounts{gap:6px;margin:9px 0 12px}
+.amounts button{padding:9px 2px;font-size:11px}
+.network-pills span{font-size:11px;padding:8px 4px}
+.tiny{font-size:11px}
+.invite{font-size:11px;padding:9px}
+.summary{padding:14px;margin:10px 0;border-radius:16px}
+.stats{font-size:19px}
+.stats small{font-size:10px;margin-top:5px}
+.tag{font-size:10px;padding:5px 7px}
+.hist p{font-size:11px}
+.hist small{font-size:10px}
+.empty{padding:40px 10px;font-size:14px}
+.menu a{padding:11px 0;font-size:13px}
+.bottom-nav{height:68px;padding-bottom:0}
+.bottom-nav a{font-size:11px;gap:4px}
+.bottom-nav svg{width:25px;height:25px}
+.bottom-nav small{font-size:11px}
+@media(max-width:390px){main{padding:8px}.top{height:56px}.top b{font-size:17px}.product{padding:10px;gap:8px}.product img{width:28%;border-radius:10px}.row{font-size:12px}.row strong{font-size:13px}.info p{font-size:11px;margin:5px 0}.invest-btn{font-size:11px;padding:8px 8px;min-width:0}.bottom-nav{height:66px}.bottom-nav svg{width:24px;height:24px}.bottom-nav small{font-size:10px}}
