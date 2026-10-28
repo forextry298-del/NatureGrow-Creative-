@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: naturegrow-creative
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_PATH
+        value: /var/data/naturegrow.db
+    disk:
+      name: naturegrow-data
+      mountPath: /var/data
+      sizeGB: 1

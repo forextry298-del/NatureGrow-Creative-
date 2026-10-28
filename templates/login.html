@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"><title>Sign In | NatureGrow Creative</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
+<body class="login-page"><div class="login-hero" role="img" aria-label="Green farm at sunrise"></div><main class="login-card-wrap"><section class="login-card">
+<header class="brand login-brand"><div class="brand-mark">♧</div><h1>NatureGrow</h1><div class="second">Creative</div></header>
+<h2>Welcome Back</h2>
+{% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}{% endwith %}
+<form method="post" autocomplete="on">
+<label class="field"><span class="symbol">✉</span><input name="email" placeholder="Email or Username" autocomplete="username" required></label>
+<label class="field"><span class="symbol">♙</span><span class="password-wrap"><input id="password" name="password" type="password" placeholder="Password" autocomplete="current-password" required><button class="toggle-pass" type="button" onclick="togglePassword('password',this)" aria-label="Show password">◉</button></span></label>
+<button class="primary" type="submit">Sign In</button>
+</form><p class="auth-foot">Don't have an account?<br><a href="{{ url_for('signup') }}">Sign Up</a></p>
+</section></main><script>function togglePassword(id,btn){const e=document.getElementById(id);e.type=e.type==='password'?'text':'password';btn.textContent=e.type==='password'?'◉':'◎';}</script></body></html>

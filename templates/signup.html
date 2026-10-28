@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"><title>Create Account | NatureGrow Creative</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
+<body><main class="page"><section class="auth-card">
+<header class="brand"><div class="brand-mark">♧</div><h1>NatureGrow<br>Creative</h1><p>Join our growing community</p></header>
+<h2>Create Account</h2>
+{% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}{% endwith %}
+<form method="post" autocomplete="on">
+<label class="field"><span class="symbol">♙</span><input name="full_name" placeholder="Full Name" autocomplete="name" required></label>
+<label class="field"><span class="symbol">@</span><input name="username" placeholder="Username" autocomplete="username" required></label>
+<label class="field"><span class="symbol">☎</span><input name="phone" type="tel" placeholder="Phone Number" autocomplete="tel" required></label>
+<label class="field"><span class="symbol">✉</span><input name="email" type="email" placeholder="Email" autocomplete="email" required></label>
+<label class="field"><span class="symbol">♙</span><span class="password-wrap"><input id="password" name="password" type="password" placeholder="Password (8+ characters)" autocomplete="new-password" required minlength="8"><button class="toggle-pass" type="button" onclick="togglePassword('password',this)" aria-label="Show password">◎</button></span></label>
+<label class="field"><span class="symbol">⌖</span><input name="interest" placeholder="Farm Location / Interest" required></label>
+<button class="primary" type="submit">Create Account</button>
+</form><p class="auth-foot">Already have an account?<br><a href="{{ url_for('login') }}">Log in</a></p>
+</section></main><script>function togglePassword(id,btn){const e=document.getElementById(id);e.type=e.type==='password'?'text':'password';btn.textContent=e.type==='password'?'◎':'◉';}</script></body></html>
