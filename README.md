@@ -1,12 +1,22 @@
 # NatureGrow Creative
-Mobile-first Flask demo inspired by the screenshots. Includes registration/login, dashboard, product cards, demo purchases, referral/team page, demo deposit/withdrawal requests, daily check-in, transaction history, support and password settings.
 
-Run: `pip install -r requirements.txt` then `python app.py`; open `http://127.0.0.1:5000`.
+Mobile-first Flask/SQLite platform with registration and login, dashboard, compact product cards, referral/team page, deposit and withdrawal request records, daily check-in, transaction history, support, and password settings.
 
-Render build command: `pip install -r requirements.txt`; start command: `gunicorn app:app`; leave Root Directory blank if these files are in repository root.
+## Run locally
 
-Important: this is a demo only. Deposits do not process payments or credit balances; withdrawals are simulated; income numbers are illustrative and not guaranteed. Do not collect real payments or market returns as guaranteed.
+```bash
+python -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
+python app.py
+```
 
+## Deployment
 
-## Image update
-The homepage hero and product cards use the supplied NatureGrow farming/solar-team image, cropped into local assets under `static/images/`. The app remains a demo: deposits are requests only, withdrawals are not paid out, and product figures are illustrative rather than guaranteed returns.
+Use `gunicorn app:app`. Set a strong `SECRET_KEY` and configure `DATABASE_PATH` to a persistent location on your host. The included Render configuration uses `/var/data/naturegrow.db`.
+
+## Payment and product requirements
+
+Deposit requests are saved as **Pending** and do not credit a balance automatically. Withdrawal requests are saved as **Pending** and do not send money automatically. A verified MTN MoMo/Airtel Money integration and a secure administrator approval workflow are required before real payments can be processed. Product daily/total figures are locally configured display values; they are not proof of actual or guaranteed returns. Referral levels are displayed for layout, but automated commission settlement is not implemented.
+
+The supplied NatureGrow farming/solar-team photo is used for the homepage and cropped product-card images. The bottom navigation uses responsive SVG icons and active-page styling.

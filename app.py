@@ -65,11 +65,11 @@ def product_list():return render_template("products.html")
 def invest(pid):
  u=user();p=next((x for x in P if x["id"]==pid),None)
  if not p: return redirect(url_for("product_list"))
- if u["balance"]<p["price"]:flash("Insufficient demo balance. Submit a demo deposit request first.","error");return redirect(url_for("product_list"))
+ if u["balance"]<p["price"]:flash("Insufficient balance. Please deposit and wait for payment verification.","error");return redirect(url_for("product_list"))
  now=datetime.now().isoformat()
  with con() as c:
-  c.execute("UPDATE users SET balance=balance-? WHERE id=?",(p["price"],u["id"]));c.execute("INSERT INTO projects(user_id,product,price,daily,created) VALUES(?,?,?,?,?)",(u["id"],p["name"],p["price"],p["daily"],now));c.execute("INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)",(u["id"],"Demo purchase",-p["price"],p["name"],"Completed",now))
- flash("Demo project purchased.");return redirect(url_for("projects"))
+  c.execute("UPDATE users SET balance=balance-? WHERE id=?",(p["price"],u["id"]));c.execute("INSERT INTO projects(user_id,product,price,daily,created) VALUES(?,?,?,?,?)",(u["id"],p["name"],p["price"],p["daily"],now));c.execute("INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)",(u["id"],"Investment",-p["price"],p["name"],"Completed",now))
+ flash("Product purchased successfully.");return redirect(url_for("projects"))
 @app.route("/projects")
 @need
 def projects():
@@ -90,8 +90,8 @@ def deposit():
   ph=request.form.get("phone","").strip()
   if a<5000 or not ph:flash("Enter at least UGX 5,000 and a phone number.","error")
   else:
-   with con() as c:c.execute("INSERT INTO requests(user_id,kind,amount,phone,status,created) VALUES(?,?,?,?,?,?)",(user()["id"],"Deposit",a,ph,"Pending (demo)",datetime.now().isoformat()))
-   flash("Request recorded as demo only. No payment was made and balance was not credited.");return redirect(url_for("history"))
+   with con() as c:c.execute("INSERT INTO requests(user_id,kind,amount,phone,status,created) VALUES(?,?,?,?,?,?)",(user()["id"],"Deposit",a,ph,"Pending",datetime.now().isoformat()))
+   flash("Deposit request submitted. Your balance will update after payment verification.");return redirect(url_for("history"))
  return render_template("deposit.html")
 @app.route("/withdraw",methods=["GET","POST"])
 @need
@@ -102,11 +102,15 @@ def withdraw():
   except:a=0
   ph=request.form.get("phone","").strip();name=request.form.get("name","").strip()
   if not name or not ph or a<5000 or a%1000:flash("Enter name, phone and amount of at least UGX 5,000 in multiples of 1,000.","error")
-  elif a>u["balance"]:flash("Insufficient demo balance.","error")
+  elif a>u["balance"]:flash("Insufficient available balance.","error")
   else:
    with con() as c:
-    c.execute("UPDATE users SET balance=balance-? WHERE id=?",(a,u["id"]));c.execute("INSERT INTO requests(user_id,kind,amount,phone,name,status,created) VALUES(?,?,?,?,?,?,?)",(u["id"],"Withdrawal",a,ph,name,"Pending (demo)",datetime.now().isoformat()));c.execute("INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)",(u["id"],"Withdrawal",-a,"Demo withdrawal request","Pending",datetime.now().isoformat()))
-   flash("Demo withdrawal recorded. No money was sent.");return redirect(url_for("history"))
+    pending=c.execute("SELECT COALESCE(SUM(amount),0) n FROM requests WHERE user_id=? AND kind='Withdrawal' AND status='Pending'",(u["id"],)).fetchone()["n"]
+    if a > u["balance"]-pending:
+     flash("Your amount exceeds the available balance after pending withdrawals.","error")
+     return redirect(url_for("withdraw"))
+    c.execute("INSERT INTO requests(user_id,kind,amount,phone,name,status,created) VALUES(?,?,?,?,?,?,?)",(u["id"],"Withdrawal",a,ph,name,"Pending",datetime.now().isoformat()))
+   flash("Withdrawal request submitted and is pending processing.");return redirect(url_for("history"))
  return render_template("withdraw.html",u=u)
 @app.route("/checkin",methods=["GET","POST"])
 @need
@@ -115,7 +119,7 @@ def checkin():
  with con() as c:
   claimed=c.execute("SELECT 1 FROM checkins WHERE user_id=? AND day=?",(u["id"],today)).fetchone() is not None
   if request.method=="POST" and not claimed:
-   now=datetime.now().isoformat();c.execute("INSERT INTO checkins VALUES(?,?)",(u["id"],today));c.execute("UPDATE users SET balance=balance+1000 WHERE id=?",(u["id"],));c.execute("INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)",(u["id"],"Bonus",1000,"Daily demo check-in","Completed",now));claimed=True;flash("UGX 1,000 demo bonus added.")
+   now=datetime.now().isoformat();c.execute("INSERT INTO checkins VALUES(?,?)",(u["id"],today));c.execute("UPDATE users SET balance=balance+1000 WHERE id=?",(u["id"],));c.execute("INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)",(u["id"],"Bonus",1000,"Daily check-in reward","Completed",now));claimed=True;flash("UGX 1,000 check-in reward added.")
  return render_template("checkin.html",claimed=claimed)
 @app.route("/history")
 @need
