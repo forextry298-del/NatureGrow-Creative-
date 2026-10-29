@@ -5,16 +5,23 @@ from flask import Flask,render_template,request,redirect,url_for,session,flash
 from werkzeug.security import generate_password_hash,check_password_hash
 app=Flask(__name__); app.secret_key=os.environ.get("SECRET_KEY","change-me-before-deployment")
 DB=os.environ.get("DATABASE_PATH","naturegrow.db")
-P=[{"id":1,"name":"Plot-1","price":45000,"daily":9000,"image":"farm1.jpg"},{"id":2,"name":"Plot-2","price":60000,"daily":12000,"image":"farm2.jpg"},{"id":3,"name":"Plot-3","price":100000,"daily":20000,"image":"farm3.jpg"},{"id":4,"name":"Plot-4","price":250000,"daily":31000,"image":"farm1.jpg"},{"id":5,"name":"Plot-5","price":500000,"daily":55000,"image":"farm2.jpg"},{"id":6,"name":"Plot-6","price":1000000,"daily":160000,"image":"farm3.jpg"},{"id":7,"name":"Plot-7","price":2000000,"daily":220000,"image":"farm1.jpg"},{"id":8,"name":"Plot-8","price":5000000,"daily":434200,"image":"farm2.jpg"}]
+P=[{'id': 1, 'name': 'Plot-1', 'price': 45000, 'daily': 9000, 'image': 'farm1.jpg', 'days': 60}, {'id': 2, 'name': 'Plot-2', 'price': 60000, 'daily': 12000, 'image': 'farm2.jpg', 'days': 60}, {'id': 3, 'name': 'Plot-3', 'price': 100000, 'daily': 20000, 'image': 'farm3.jpg', 'days': 60}, {'id': 4, 'name': 'Plot-4', 'price': 250000, 'daily': 31000, 'image': 'farm1.jpg', 'days': 60}, {'id': 5, 'name': 'Plot-5', 'price': 500000, 'daily': 55000, 'image': 'farm2.jpg', 'days': 60}, {'id': 6, 'name': 'Plot-6', 'price': 1000000, 'daily': 160000, 'image': 'farm3.jpg', 'days': 60}, {'id': 7, 'name': 'Plot-7', 'price': 2000000, 'daily': 220000, 'image': 'farm1.jpg', 'days': 60}, {'id': 8, 'name': 'Plot-8', 'price': 5000000, 'daily': 434200, 'image': 'farm2.jpg', 'days': 60}, {'id': 9, 'name': 'Farm 1', 'price': 25000, 'daily': 1700, 'image': 'farm_product_1.jpg', 'days': 30}, {'id': 10, 'name': 'Farm 2', 'price': 50000, 'daily': 7000, 'image': 'farm_product_2.jpg', 'days': 30}, {'id': 11, 'name': 'Farm 3', 'price': 100000, 'daily': 6000, 'image': 'farm_product_3.jpg', 'days': 60}, {'id': 12, 'name': 'Farm 4', 'price': 100000, 'daily': 12000, 'image': 'farm_product_4.jpg', 'days': 30}, {'id': 13, 'name': 'Farm 5', 'price': 150000, 'daily': 10000, 'image': 'farm_product_5.jpg', 'days': 60}, {'id': 14, 'name': 'Farm 6', 'price': 554000, 'daily': 24700, 'image': 'farm_product_6.jpg', 'days': 60}, {'id': 15, 'name': 'Farm 7', 'price': 350000, 'daily': 37000, 'image': 'farm_product_7.jpg', 'days': 30}, {'id': 16, 'name': 'Farm 8', 'price': 300000, 'daily': 32000, 'image': 'farm_product_8.jpg', 'days': 30}]
 def con(): 
  c=sqlite3.connect(DB); c.row_factory=sqlite3.Row; return c
 with con() as c:
  c.executescript("""CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY,username TEXT UNIQUE,phone TEXT,password TEXT,invite TEXT UNIQUE,referrer INTEGER,balance INTEGER DEFAULT 0,created TEXT);
  CREATE TABLE IF NOT EXISTS tx(id INTEGER PRIMARY KEY,user_id INTEGER,kind TEXT,amount INTEGER,note TEXT,status TEXT,created TEXT);
- CREATE TABLE IF NOT EXISTS projects(id INTEGER PRIMARY KEY,user_id INTEGER,product TEXT,price INTEGER,daily INTEGER,created TEXT);
+ CREATE TABLE IF NOT EXISTS projects(id INTEGER PRIMARY KEY,user_id INTEGER,product TEXT,price INTEGER,daily INTEGER,days INTEGER DEFAULT 60,created TEXT);
  CREATE TABLE IF NOT EXISTS checkins(user_id INTEGER,day TEXT,UNIQUE(user_id,day));
  CREATE TABLE IF NOT EXISTS requests(id INTEGER PRIMARY KEY,user_id INTEGER,kind TEXT,amount INTEGER,phone TEXT,name TEXT,status TEXT,created TEXT);
  CREATE TABLE IF NOT EXISTS announcements(id INTEGER PRIMARY KEY,title TEXT NOT NULL,body TEXT NOT NULL,created TEXT NOT NULL);""")
+# Safe migration for per-product validity days.
+with con() as c:
+ try:
+  c.execute("ALTER TABLE projects ADD COLUMN days INTEGER DEFAULT 60")
+ except sqlite3.OperationalError:
+  pass
+
 # Safe migrations for deposit payment details on existing databases.
 with con() as c:
  for column, definition in [("network", "TEXT DEFAULT ''"), ("reference", "TEXT DEFAULT ''")]:
@@ -86,7 +93,7 @@ def invest(pid):
  if u["balance"]<p["price"]:flash("Insufficient balance. Please deposit and wait for payment verification.","error");return redirect(url_for("product_list"))
  now=datetime.now().isoformat()
  with con() as c:
-  c.execute("UPDATE users SET balance=balance-? WHERE id=?",(p["price"],u["id"]));c.execute("INSERT INTO projects(user_id,product,price,daily,created) VALUES(?,?,?,?,?)",(u["id"],p["name"],p["price"],p["daily"],now));c.execute("INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)",(u["id"],"Investment",-p["price"],p["name"],"Completed",now))
+  c.execute("UPDATE users SET balance=balance-? WHERE id=?",(p["price"],u["id"]));c.execute("INSERT INTO projects(user_id,product,price,daily,days,created) VALUES(?,?,?,?,?,?)",(u["id"],p["name"],p["price"],p["daily"],p["days"],now));c.execute("INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)",(u["id"],"Investment",-p["price"],p["name"],"Completed",now))
  flash("Product purchased successfully.");return redirect(url_for("projects"))
 @app.route("/projects")
 @need
