@@ -273,7 +273,24 @@ def history():
 @app.route("/announcements")
 @need
 def announcements():
- with con() as c: rows=c.execute("SELECT title,body,created FROM announcements ORDER BY id DESC").fetchall()
+ defaults = [
+  ("🌱 Products — View Available Products", "Open Products to view available products, prices, advertised daily income and validity. Review the terms carefully before making a purchase."),
+  ("💳 How to Deposit", "Open Deposit, enter your amount, select the available MTN or Airtel payment option, and follow the payment instructions displayed. Keep your transaction confirmation. Never share your mobile money PIN or verification code."),
+  ("🌿 How to Check In Daily", "Open Daily Check-in if available, review the eligibility requirements, and follow the claim instructions. An active product may be required. Check the confirmation message after claiming."),
+  ("👥 Invite Friends", "Open Referrals to find your invite link or code. Share it with friends and review the referral terms to understand eligibility and applicable rewards."),
+  ("💸 How to Withdraw", "Open Withdraw, enter the requested details, and review the amount, fees and displayed requirements before submitting. Keep your transaction reference and contact support if your request remains pending."),
+  ("📊 Understand Product Earnings", "Review each product's price, advertised daily income, validity and total displayed earnings before purchasing. Earnings are not guaranteed and depend on the platform's actual terms and performance."),
+  ("🔐 Keep Your Account Secure", "Use a strong, unique password. Never share your password, mobile money PIN or verification code. Use only the official payment instructions shown on the platform."),
+  ("🎧 Need Help? Contact Support", "Open Support and describe your issue clearly. Include a transaction reference when relevant, but never send your password or mobile money PIN."),
+  ("📢 Check Announcements Regularly", "Visit this page for platform guidance and updates. Check the latest information before making transactions.")
+ ]
+ from datetime import datetime
+ from zoneinfo import ZoneInfo
+ now = datetime.now(ZoneInfo("Africa/Kampala")).strftime("%Y-%m-%d %H:%M:%S")
+ with con() as c:
+  for title, body in defaults:
+   c.execute("INSERT INTO announcements (title,body,created) SELECT ?,?,? WHERE NOT EXISTS (SELECT 1 FROM announcements WHERE title=?)", (title,body,now,title))
+  rows=c.execute("SELECT title,body,created FROM announcements ORDER BY id DESC").fetchall()
  return render_template("announcements.html",rows=rows)
 @app.route("/support")
 @need
