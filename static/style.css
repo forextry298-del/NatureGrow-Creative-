@@ -112,3 +112,102 @@ body:has(.home-page) .home-page{margin-top:0}
 .announcement-empty span{font-size:28px;color:#78d18d}
 .announcement-empty p{font-size:14px;color:#f6f7f8;margin:8px 0 4px}
 @media(max-width:390px){.hero-notice{width:38px;height:38px;right:14px;top:14px}.hero-notice svg{width:21px;height:21px}}
+
+
+/* Profile / Mine screen with the farm photo layered behind account details */
+.profile-banner{min-height:150px;position:relative;display:flex;align-items:center;gap:13px;padding:20px 16px;margin:2px 0 13px;border-radius:20px;overflow:hidden;background:linear-gradient(90deg,rgba(10,22,12,.70),rgba(10,22,12,.35)),url('/static/images/profile-farm-banner.jpg') center/cover no-repeat;border:1px solid #41443b}
+.profile-avatar{width:70px;height:70px;flex:0 0 70px;border-radius:50%;display:grid;place-items:center;background:#2f7fe5;color:white;font-size:38px;border:3px solid #ffffff55}
+.profile-identity{min-width:0;color:white;text-shadow:0 1px 4px #0009}
+.profile-identity p{font-size:13px;margin:3px 0;overflow-wrap:anywhere}
+.profile-identity h1{font-size:26px;line-height:1.1;margin:6px 0 0}
+.profile-balance-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.profile-stat{padding:16px 13px;border:1px solid #48453f;border-radius:20px;background:#292520}
+.profile-stat small{font-size:13px;color:#c3beb6}
+.profile-stat h2{font-size:21px;margin:7px 0;color:#f8f7f3;overflow-wrap:anywhere}
+.profile-stat p{font-size:11px;color:#bcb5ad;margin:0;line-height:1.4}
+.profile-stat .growth-value{color:#3488f4}
+.profile-harvest{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:12px 0;padding:22px 8px;border:1px solid #48453f;border-radius:20px;background:#292520;text-align:center}
+.profile-harvest>div{display:flex;flex-direction:column;justify-content:center;gap:8px;padding:8px 5px}
+.profile-harvest>div+div{border-left:1px solid #555047}
+.profile-harvest strong{font-size:23px;color:#3488f4;overflow-wrap:anywhere}
+.profile-harvest span{font-size:13px;color:#c3beb6}
+.profile-menu-item{display:flex;align-items:center;justify-content:space-between;padding:18px 17px;margin:12px 0;background:#171512;border:1px solid #29251f;border-radius:18px;color:#fff;text-decoration:none;font-size:20px}
+.profile-menu-item>span{display:flex;align-items:center;gap:14px}
+.profile-menu-item>b{font-size:28px}
+.profile-leaf{font-size:29px;color:#78d18d}
+.profile-links{margin-top:12px}
+.settings-password input{min-height:44px}
+.theme-settings p{font-size:12px;line-height:1.5}
+.theme-settings .primary{min-height:43px}
+@media(max-width:390px){.profile-banner{min-height:132px;padding:14px 12px;gap:10px;border-radius:17px}.profile-avatar{width:58px;height:58px;flex-basis:58px;font-size:31px}.profile-identity p{font-size:11px}.profile-identity h1{font-size:22px}.profile-stat{padding:13px 10px;border-radius:17px}.profile-stat h2{font-size:18px}.profile-stat small{font-size:11px}.profile-stat p{font-size:10px}.profile-harvest{padding:17px 5px}.profile-harvest strong{font-size:19px}.profile-harvest span{font-size:11px}.profile-menu-item{padding:15px;font-size:17px}}
+
+/* Light theme: full-site botanical green and warm cream, toggled from Settings.
+   The selection is stored in localStorage so it remains active when navigating or reopening the site. */
+html[data-theme="light"],html[data-theme="light"] body{background:#f1f3df;color:#164e32}
+html[data-theme="light"] .top{background:#fbfaf0;border-bottom-color:#dce5c8;color:#155334}
+html[data-theme="light"] .top .back{background:#e9f0d8;border-color:#cfdfb9;color:#155334}
+html[data-theme="light"] .card,
+html[data-theme="light"] .balance,
+html[data-theme="light"] .product,
+html[data-theme="light"] .shortcuts a,
+html[data-theme="light"] .home-balance,
+html[data-theme="light"] .home-growth,
+html[data-theme="light"] .profile-stat,
+html[data-theme="light"] .profile-harvest{background:#fffef8;color:#164e32;border-color:#c9d9b8;box-shadow:0 4px 14px #345b2414}
+html[data-theme="light"] .hero{border-color:#d0dfbd}
+html[data-theme="light"] .hero h1,
+html[data-theme="light"] .home-section-title{color:#155334}
+html[data-theme="light"] .home-page{background:#f1f3df}
+html[data-theme="light"] .home-hero{background-image:linear-gradient(0deg,rgba(12,40,20,.56),rgba(12,40,20,.02) 72%),url('/static/images/naturegrow-home-banner.jpg')}
+html[data-theme="light"] .home-balance small,
+html[data-theme="light"] .home-growth small,
+html[data-theme="light"] .home-balance p,
+html[data-theme="light"] .home-growth p,
+html[data-theme="light"] .profile-stat small,
+html[data-theme="light"] .profile-stat p,
+html[data-theme="light"] .profile-harvest span,
+html[data-theme="light"] .muted{color:#526b54}
+html[data-theme="light"] .home-balance h1,
+html[data-theme="light"] .profile-stat h2{color:#155334}
+html[data-theme="light"] .home-growth h2,
+html[data-theme="light"] .profile-stat .growth-value{color:#2679df}
+html[data-theme="light"] .home-product{background:#fffdf7;border-color:#d8d6c5;color:#164e32}
+html[data-theme="light"] .home-product-row b{color:#155334}
+html[data-theme="light"] .home-product-row strong,
+html[data-theme="light"] .home-product-info .total-line{color:#2679df}
+html[data-theme="light"] .home-product-info p{color:#465746}
+html[data-theme="light"] .home-invest,
+html[data-theme="light"] .deposit-action,
+html[data-theme="light"] .pill,
+html[data-theme="light"] .dark{background:#418e55;color:white;border-color:#418e55}
+html[data-theme="light"] .primary,
+html[data-theme="light"] .invest-btn{background:#4b9a5e;color:#fff}
+html[data-theme="light"] .home-all-products{background:#e2edd4;color:#17603a}
+html[data-theme="light"] .summary,
+html[data-theme="light"] .wide{background:#e5edd7;color:#164e32}
+html[data-theme="light"] .notice{background:#e3efd9;color:#164e32;border-left-color:#4b9a5e}
+html[data-theme="light"] .notice.error{border-left-color:#d83b4b}
+html[data-theme="light"] .card input,
+html[data-theme="light"] .amounts button,
+html[data-theme="light"] .network-pills span,
+html[data-theme="light"] .invite,
+html[data-theme="light"] .tag{background:#f5f5e9;color:#164e32;border-color:#c9d9b8}
+html[data-theme="light"] .card input:focus{outline:1px solid #4b9a5e}
+html[data-theme="light"] .card a,
+html[data-theme="light"] .menu a{color:#17603a}
+html[data-theme="light"] .menu a{border-bottom-color:#d8e2cc}
+html[data-theme="light"] .bottom-nav{background:#fbfaf0;border-color:#d5e1c7;box-shadow:0 -2px 12px #45662b12}
+html[data-theme="light"] .bottom-nav a{color:#8b9184}
+html[data-theme="light"] .bottom-nav a.active{color:#398b53}
+html[data-theme="light"] .profile-banner{border-color:#c8d8b9}
+html[data-theme="light"] .profile-avatar{background:#71c75f;color:#fff;border-color:#ffffffaa}
+html[data-theme="light"] .profile-menu-item{background:#fffdf6;color:#155334;border-color:#d7e2c8;box-shadow:0 4px 14px #345b2410}
+html[data-theme="light"] .profile-leaf{color:#4b9a5e}
+html[data-theme="light"] .profile-harvest>div+div{border-left-color:#d0dfc2}
+html[data-theme="light"] .announcement-item{border-top-color:#d6e1cb}
+html[data-theme="light"] .announcement-item small,
+html[data-theme="light"] .announcement-empty small,
+html[data-theme="light"] .announcement-empty{color:#526b54}
+html[data-theme="light"] .announcement-empty p{color:#164e32}
+html[data-theme="light"] .announcement-empty span{color:#4b9a5e}
+html[data-theme="light"] .bottom-nav a.active svg{stroke-width:2.4}

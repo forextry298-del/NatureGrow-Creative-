@@ -1,0 +1,24 @@
+{% extends "base.html" %}{% block heading %}Mine{% endblock %}{% block content %}
+<section class="profile-banner">
+  <div class="profile-avatar" aria-hidden="true"><span>✦</span></div>
+  <div class="profile-identity">
+    <p>Ph: {{u['phone'][:3]}}****{{u['phone'][-3:] if u['phone']|length > 6 else u['phone'][-2:]}}</p>
+    <p>ID: NG{{u['invite']}}</p>
+    <h1>{{money(u['balance'])}}</h1>
+  </div>
+</section>
+<div class="profile-balance-grid">
+  <section class="profile-stat"><small>My Balance</small><h2>{{money(u['balance'])}}</h2><p>Spendable · Withdrawable</p></section>
+  <section class="profile-stat"><small>Growth Balance</small><h2 class="growth-value">UGX 0</h2><p>Released after 60 days</p></section>
+</div>
+<section class="profile-harvest">
+  <div><strong>{{active}}</strong><span>Active Plots</span></div>
+  <div><strong>{{money(harvest)}}</strong><span>Total Harvest Value</span></div>
+</section>
+<a class="profile-menu-item" href="{{url_for('projects')}}"><span><b class="profile-leaf">❧</b> My Products</span><b>›</b></a>
+<section class="card menu profile-links">
+  {% for ep,label in [('settings','Settings'),('deposit','Deposit'),('withdraw','Withdraw'),('team','Team / Invite'),('history','History'),('checkin','Daily Check-in'),('support','Contact Support'),('logout','Logout')] %}
+  <a href="{{url_for(ep)}}">{{label}} <span>›</span></a>
+  {% endfor %}
+</section>
+{% endblock %}

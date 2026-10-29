@@ -135,6 +135,15 @@ def announcements():
 @app.route("/support")
 @need
 def support():return render_template("support.html")
+@app.route("/profile")
+@need
+def profile():
+ u=user()
+ with con() as c:
+  rows=c.execute("SELECT * FROM projects WHERE user_id=? ORDER BY id DESC",(u["id"],)).fetchall()
+ active=len(rows)
+ harvest=sum(int(r["daily"])*60 for r in rows)
+ return render_template("profile.html",u=u,rows=rows,active=active,harvest=harvest)
 @app.route("/settings",methods=["GET","POST"])
 @need
 def settings():

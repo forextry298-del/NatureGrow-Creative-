@@ -1,1 +1,19 @@
-{% extends "base.html" %}{% block heading %}Settings{% endblock %}{% block content %}<section class="card"><h2>Change Password</h2><form method="post"><label>New Password<input type="password" name="password" minlength="6" required></label><label>Confirm Password<input type="password" name="confirm" minlength="6" required></label><button class="primary full">Update Password</button></form></section><section class="card menu">{% for ep,label in [('projects','My Projects'),('withdraw','Withdraw'),('history','History'),('checkin','Daily Check-in'),('support','Contact Support'),('logout','Logout')] %}<a href="{{url_for(ep)}}">{{label}} <span>›</span></a>{% endfor %}</section>{% endblock %}
+{% extends "base.html" %}{% block heading %}Settings{% endblock %}{% block content %}
+<section class="card settings-password">
+  <h2>Change Password</h2>
+  <form method="post">
+    <label>New Password<input type="password" name="password" minlength="6" autocomplete="new-password" required></label>
+    <label>Confirm Password<input type="password" name="confirm" minlength="6" autocomplete="new-password" required></label>
+    <button class="primary full" type="submit">Update Password</button>
+  </form>
+</section>
+<section class="card theme-settings">
+  <h2>Appearance</h2>
+  <p class="muted">Switch the whole platform between the dark look and the green-and-cream design.</p>
+  <button class="primary full" type="button" data-theme-toggle>Switch to Light Theme</button>
+</section>
+<section class="card menu">
+  {% for ep,label in [('profile','My Profile'),('projects','My Projects'),('withdraw','Withdraw'),('history','History'),('checkin','Daily Check-in'),('support','Contact Support'),('logout','Logout')] %}
+  <a href="{{url_for(ep)}}">{{label}} <span>›</span></a>
+  {% endfor %}
+</section>{% endblock %}
