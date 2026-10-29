@@ -1,11 +1,76 @@
 {% extends "base.html" %}
 {% block heading %}Announcements{% endblock %}
 {% block content %}
+<style>
+.announcement-page .announcement-item {
+  padding: 16px 0;
+  border-bottom: 1px solid #e2e8d5;
+}
+.announcement-page .announcement-item h3 {
+  color: #245b3b;
+  margin: 0 0 8px;
+}
+.announcement-page .announcement-item p {
+  line-height: 1.65;
+  white-space: pre-line;
+  margin: 0 0 10px;
+}
+.announcement-page .announcement-item small {
+  color: #71806e;
+  font-size: 12px;
+}
+.announcement-empty {
+  text-align: center;
+  padding: 38px 10px;
+  color: #245b3b;
+}
+.announcement-icon {
+  width: 42px;
+  height: 42px;
+  color: #43885b;
+  display: block;
+  margin: 0 auto 12px;
+}
+.announcement-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+</style>
+
 <section class="card announcement-page">
-<h2>Announcements</h2>
-<p class="muted">Updates from NatureGrow Collective</p>
-{% if rows %}
-{% for item in rows %}<article class="announcement-item"><h3>{{item.title}}</h3><p>{{item.body}}</p><small>{{item.created[:16].replace('T',' ')}}</small></article>{% endfor %}
-{% else %}<div class="announcement-empty"><span>♧</span><p>No announcements yet.</p><small>New updates will appear here.</small></div>{% endif %}
+  <h2>Announcements</h2>
+  <p class="muted">Updates from NatureGrow Creative</p>
+
+  {% if rows %}
+    {% for item in rows %}
+      <article class="announcement-item">
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.body }}</p>
+        <small class="announcement-time">
+          <svg width="14" height="14" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2"
+               aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 7v5l3 2"/>
+          </svg>
+          {{ item.created[11:16] if item.created and item.created|length >= 16 else (item.created or '') }}
+        </small>
+      </article>
+    {% endfor %}
+  {% else %}
+    <div class="announcement-empty">
+      <svg class="announcement-icon" viewBox="0 0 48 48"
+           fill="none" stroke="currentColor" stroke-width="2.5"
+           stroke-linecap="round" stroke-linejoin="round"
+           role="img" aria-label="Announcement megaphone">
+        <path d="M6 21h9l22-11v28L15 27H6z"/>
+        <path d="M15 27l4 13h8l-5-10"/>
+        <path d="M42 18l4-3M42 30l4 3"/>
+      </svg>
+      <p>No announcements yet.</p>
+      <small>New updates will appear here.</small>
+    </div>
+  {% endif %}
 </section>
 {% endblock %}
