@@ -2,20 +2,13 @@
 {% block heading %}My Projects{% endblock %}
 {% block content %}
 <style>
-.project-list{display:grid;gap:14px}
-.project-card{overflow:hidden;border:1px solid var(--border,#3c3c3c);border-radius:20px;background:var(--card,#242529)}
-.project-image{width:100%;height:190px;object-fit:cover;display:block;background:#dfe8d7}
-.project-content{padding:16px}
-.project-content h2{font-size:20px;margin:0 0 12px}
-.project-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
-.project-stat{padding:11px;border-radius:12px;background:rgba(128,160,110,.10)}
-.project-stat small{display:block;opacity:.75;margin-bottom:5px}
-.project-stat b{overflow-wrap:anywhere}
-.project-timer{margin-top:12px;padding:12px;border-radius:12px;background:rgba(72,135,83,.13);color:#73c58a}
-.project-timer strong{display:block;font-size:18px;margin-top:5px}
-.project-status{display:inline-block;padding:5px 10px;border-radius:99px;font-size:12px;background:#d9f3df;color:#205d31}
-.project-status.expired{background:#f8dede;color:#8b2525}
-.project-muted{opacity:.75;font-size:13px;line-height:1.5}
+.project-list{display:grid;gap:14px}.project-card{overflow:hidden;border:1px solid #454545;border-radius:18px;background:var(--card,#242529)}
+.project-image{width:100%;height:190px;object-fit:cover;display:block;background:#dfe8d7}.project-content{padding:15px}
+.project-content h2{font-size:20px;margin:0}.project-meta{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0}
+.project-stat{padding:10px;border-radius:11px;background:rgba(128,160,110,.12)}.project-stat small{display:block;opacity:.75;margin-bottom:5px}
+.project-stat b{overflow-wrap:anywhere}.project-timer{margin-top:12px;padding:12px;border-radius:12px;background:rgba(72,135,83,.13);color:#73c58a}
+.project-timer strong{display:block;font-size:20px;margin-top:5px}.project-status{display:inline-block;padding:5px 10px;border-radius:99px;background:#d9f3df;color:#205d31;font-size:12px}
+.project-status.expired{background:#f8dede;color:#8b2525}.project-muted{opacity:.75;font-size:13px;line-height:1.5}
 @media(max-width:380px){.project-meta{grid-template-columns:1fr}.project-image{height:155px}}
 </style>
 <section class="project-list">
@@ -27,37 +20,60 @@
 {% set total = daily * days %}
 {% set image_name = product.get('image') if product else '' %}
 <article class="project-card">
-{% if image_name %}<img class="project-image" src="{{ url_for('static', filename='images/' + image_name) }}" alt="{{ r['product'] }}" onerror="this.style.display='none'">{% endif %}
+{% if image_name %}<img class="project-image" src="{{url_for('static',filename='images/'+image_name)}}" alt="{{r['product']}}" onerror="this.style.display='none'">{% endif %}
 <div class="project-content">
-<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
-<h2>{{ r['product'] }}</h2>
-{% if credited >= days %}<span class="project-status expired">Expired</span>{% else %}<span class="project-status">Active</span>{% endif %}
-</div>
+<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><h2>{{r['product']}}</h2>{% if credited >= days %}<span class="project-status expired">Expired</span>{% else %}<span class="project-status">Active</span>{% endif %}</div>
 <div class="project-meta">
-<div class="project-stat"><small>Purchase price</small><b>{{ money(r['price']) }}</b></div>
-<div class="project-stat"><small>Daily income</small><b>{{ money(daily) }}</b></div>
-<div class="project-stat"><small>Total scheduled income</small><b>{{ money(total) }}</b></div>
-<div class="project-stat"><small>Validity</small><b>{{ days }} days</b></div>
-<div class="project-stat"><small>Income days credited</small><b>{{ credited }} / {{ days }}</b></div>
-<div class="project-stat"><small>Income credited so far</small><b>{{ money(credited * daily) }}</b></div>
+<div class="project-stat"><small>Purchase price</small><b>{{money(r['price'])}}</b></div>
+<div class="project-stat"><small>Daily income</small><b>{{money(daily)}}</b></div>
+<div class="project-stat"><small>Total scheduled income</small><b>{{money(total)}}</b></div>
+<div class="project-stat"><small>Validity</small><b>{{days}} days</b></div>
+<div class="project-stat"><small>Income days credited</small><b>{{credited}} / {{days}}</b></div>
+<div class="project-stat"><small>Income credited so far</small><b>{{money(credited*daily)}}</b></div>
 </div>
-{% if credited < days %}<div class="project-timer" data-project-timer data-created="{{ r['created'] }}" data-credited="{{ credited }}" data-days="{{ days }}">Next daily income in<strong>Calculating…</strong></div>{% else %}<p class="project-muted">This product has reached the end of its validity period. No further daily income is scheduled.</p>{% endif %}
-<p class="project-muted">Daily income is processed after each full 24-hour period when the server processes your account. The timer shows the next scheduled interval.</p>
+{% if credited < days %}<div class="project-timer" data-timer data-created="{{r['created']}}" data-credited="{{credited}}" data-days="{{days}}">Time remaining<strong>Calculating…</strong></div>{% else %}<p class="project-muted">Expired. No more daily income is scheduled.</p>{% endif %}
+<p class="project-muted">The timer is measured from the purchase time in full 24-hour periods.</p>
 </div></article>
-{% else %}<section class="card"><p>You have not purchased any products yet.</p><a href="{{ url_for('product_list') }}">View products</a></section>{% endfor %}
+{% else %}<section class="card"><p>You have not purchased any products yet.</p><a href="{{url_for('product_list')}}">View products</a></section>{% endfor %}
 </section>
 <script>
 (function(){
- function update(){document.querySelectorAll('[data-project-timer]').forEach(function(el){
-  var raw=el.dataset.created||'',start=new Date(raw.replace(' ','T'));
-  if(isNaN(start.getTime())){el.querySelector('strong').textContent='Pending schedule';return;}
-  var credited=parseInt(el.dataset.credited||'0',10),days=parseInt(el.dataset.days||'60',10),remaining=start.getTime()+(credited+1)*86400000-Date.now(),label=el.querySelector('strong');
-  if(credited>=days){el.innerHTML='Product expired';return;}
-  if(remaining<=0){label.textContent='Due — refresh to process income';return;}
-  var h=Math.floor(remaining/3600000),m=Math.floor((remaining%3600000)/60000),s=Math.floor((remaining%60000)/1000);
-  label.textContent=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
- });}
- update();setInterval(update,1000);
+  function updateTimers(){
+    document.querySelectorAll('[data-timer]').forEach(function(el){
+      var raw = el.dataset.created || '';
+      var start = new Date(raw.replace(' ', 'T'));
+      var days = parseInt(el.dataset.days || '60', 10);
+      var label = el.querySelector('strong');
+
+      if (!label || isNaN(start.getTime())) {
+        if (label) label.textContent = 'Timer unavailable';
+        return;
+      }
+
+      var expiry = start.getTime() + days * 86400000;
+      var remaining = expiry - Date.now();
+
+      if (remaining <= 0) {
+        el.innerHTML = 'Product expired';
+        el.classList.add('expired');
+        return;
+      }
+
+      var totalSeconds = Math.floor(remaining / 1000);
+      var d = Math.floor(totalSeconds / 86400);
+      var h = Math.floor((totalSeconds % 86400) / 3600);
+      var m = Math.floor((totalSeconds % 3600) / 60);
+      var sec = totalSeconds % 60;
+
+      label.textContent =
+        d + ' days ' +
+        String(h).padStart(2, '0') + ':' +
+        String(m).padStart(2, '0') + ':' +
+        String(sec).padStart(2, '0');
+    });
+  }
+  updateTimers();
+  setInterval(updateTimers, 1000);
 })();
 </script>
 {% endblock %}

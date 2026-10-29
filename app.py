@@ -100,6 +100,72 @@ def need(f):
 def money(x):return "UGX "+format(int(x),",")
 @app.context_processor
 def globals():return {"active_user":user(),"money":money,"products":P}
+
+ADMIN_PHONE = "0758878297"
+
+def ng_ensure_tables():
+ with con() as c:
+  c.execute("CREATE TABLE IF NOT EXISTS project_earnings (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL, user_id INTEGER NOT NULL, day_no INTEGER NOT NULL, amount INTEGER NOT NULL, credited_at TEXT NOT NULL, UNIQUE(project_id,day_no))")
+  c.execute("CREATE TABLE IF NOT EXISTS product_controls (product_id INTEGER PRIMARY KEY, locked INTEGER NOT NULL DEFAULT 0, income_enabled INTEGER NOT NULL DEFAULT 1)")
+  c.execute("CREATE TABLE IF NOT EXISTS admin_balance_audit (id INTEGER PRIMARY KEY AUTOINCREMENT, admin_user_id INTEGER, target_user_id INTEGER, old_balance INTEGER, new_balance INTEGER, reason TEXT, created TEXT)")
+
+def ng_is_admin():
+ u = user()
+ if not u: return False
+ digits = "".join(ch for ch in str(u["phone"] or "") if ch.isdigit())
+ return digits.endswith("758878297")
+
+def ng_admin_required(f):
+ @wraps(f)
+ def wrapped(*args, **kwargs):
+  if not user(): return redirect(url_for("login"))
+  if not ng_is_admin():
+   flash("Administrator access only.", "error")
+   return redirect(url_for("dashboard"))
+  return f(*args, **kwargs)
+ return wrapped
+
+def ng_process_due_earnings(uid=None):
+ # Credits only after full 86,400-second intervals from each purchase timestamp.
+ ng_ensure_tables()
+ now = datetime.now()
+ with con() as c:
+  if uid is None:
+   rows = c.execute("SELECT * FROM projects ORDER BY id").fetchall()
+  else:
+   rows = c.execute("SELECT * FROM projects WHERE user_id=? ORDER BY id", (uid,)).fetchall()
+  for p in rows:
+   try:
+    start = datetime.fromisoformat(str(p["created"]).replace("Z","+00:00"))
+    if start.tzinfo is not None: start = start.astimezone().replace(tzinfo=None)
+    cols = {r["name"] for r in c.execute("PRAGMA table_info(projects)").fetchall()}
+    days = max(1, int(p["days"] or 60)) if "days" in cols else 60
+    due = min(days, max(0, int((now-start).total_seconds() // 86400)))
+    item = next((x for x in P if x["name"] == p["product"]), None)
+    if item:
+     ctl = c.execute("SELECT income_enabled FROM product_controls WHERE product_id=?", (item["id"],)).fetchone()
+     if ctl and not ctl["income_enabled"]: continue
+    done = {int(r["day_no"]) for r in c.execute("SELECT day_no FROM project_earnings WHERE project_id=?", (p["id"],)).fetchall()}
+    for day_no in range(1, due+1):
+     if day_no in done: continue
+     amount = max(0, int(p["daily"] or 0))
+     stamp = now.isoformat(timespec="seconds")
+     cur = c.execute("INSERT OR IGNORE INTO project_earnings(project_id,user_id,day_no,amount,credited_at) VALUES(?,?,?,?,?)", (p["id"],p["user_id"],day_no,amount,stamp))
+     if cur.rowcount:
+      c.execute("UPDATE users SET balance=COALESCE(balance,0)+? WHERE id=?", (amount,p["user_id"]))
+      c.execute("INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)", (p["user_id"],"Product Income",amount,str(p["product"])+" daily income day "+str(day_no),"Completed",stamp))
+   except (ValueError, TypeError, KeyError):
+    continue
+
+ng_ensure_tables()
+
+
+def ng_product_locked(pid):
+ ng_ensure_tables()
+ with con() as c:
+  r=c.execute("SELECT locked FROM product_controls WHERE product_id=?",(pid,)).fetchone()
+ return bool(r and r["locked"])
+
 @app.route("/")
 def index():return redirect(url_for("dashboard") if user() else url_for("login"))
 @app.route("/register",methods=["GET","POST"])
@@ -133,12 +199,21 @@ def dashboard():
  return render_template("dashboard.html",u=u,active=active)
 @app.route("/products")
 @need
-def product_list():return render_template("products.html")
+def product_list():
+ ng_ensure_tables()
+ with con() as c: controls={r["product_id"]:r for r in c.execute("SELECT * FROM product_controls").fetchall()}
+ for item in P:
+  item["locked"]=bool(controls.get(item["id"]) and controls[item["id"]]["locked"])
+  item["income_enabled"]=bool(controls.get(item["id"],{"income_enabled":1})["income_enabled"])
+ return render_template("products.html")
 @app.route("/invest/<int:pid>",methods=["POST"])
 @need
 def invest(pid):
  u=user();p=next((x for x in P if x["id"]==pid),None)
  if not p: return redirect(url_for("product_list"))
+ if ng_product_locked(pid):
+  flash("This product is currently locked.", "error")
+  return redirect(url_for("product_list"))
  if p.get("sold_out", False):
   flash("Plot-7 is sold out and cannot be purchased.", "error")
   return redirect(url_for("product_list"))
@@ -495,5 +570,119 @@ def admin_panel():
   product_rows = list(P)
  return render_template('admin.html', tab=tab, q=q, counts=counts, users=users, deposits=deposits, withdrawals=withdrawals, teams=teams, announcements=announcements, product_rows=product_rows)
 
+
+
+@app.route("/admin")
+@ng_admin_required
+def ng_admin_panel():
+ ng_process_due_earnings()
+ with con() as c:
+  users=c.execute("SELECT u.*, (SELECT COUNT(*) FROM users t WHERE t.referrer=u.id) team_count, CASE WHEN EXISTS(SELECT 1 FROM requests r WHERE r.user_id=u.id AND lower(r.kind)='deposit' AND lower(r.status) IN ('approved','completed')) THEN 1 ELSE 0 END has_deposit FROM users u ORDER BY u.id DESC LIMIT 300").fetchall()
+  reqs=c.execute("SELECT r.*,u.username,u.phone account_phone FROM requests r LEFT JOIN users u ON u.id=r.user_id ORDER BY r.id DESC LIMIT 300").fetchall()
+  controls={r["product_id"]:r for r in c.execute("SELECT * FROM product_controls").fetchall()}
+ items=[]
+ for p in P:
+  q=dict(p); ctl=controls.get(p["id"]); q["locked"]=bool(ctl and ctl["locked"]); q["income_enabled"]=bool(ctl["income_enabled"]) if ctl else True; items.append(q)
+ return render_template("admin.html",users=users,requests_rows=reqs,items=items)
+
+@app.route("/admin/request/<int:rid>",methods=["POST"])
+@ng_admin_required
+def ng_admin_request(rid):
+ action=request.form.get("action","").lower()
+ if action not in ("approve","reject"):
+  flash("Invalid action.","error"); return redirect(url_for("ng_admin_panel"))
+ with con() as c:
+  r=c.execute("SELECT * FROM requests WHERE id=?",(rid,)).fetchone()
+  if not r: flash("Request not found.","error"); return redirect(url_for("ng_admin_panel"))
+  if str(r["status"] or "").lower() not in ("pending","waiting"):
+   flash("Request already processed.","error"); return redirect(url_for("ng_admin_panel"))
+  if action=="reject": c.execute("UPDATE requests SET status='Rejected' WHERE id=?",(rid,))
+  elif str(r["kind"] or "").lower()=="deposit":
+   c.execute("UPDATE requests SET status='Approved' WHERE id=?",(rid,))
+   c.execute("UPDATE users SET balance=COALESCE(balance,0)+? WHERE id=?",(int(r["amount"] or 0),r["user_id"]))
+   now=datetime.now().isoformat()
+   c.execute("INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)",(r["user_id"],"Deposit",int(r["amount"] or 0),"Admin approved request #"+str(rid),"Completed",now))
+  elif str(r["kind"] or "").lower()=="withdraw":
+   c.execute("UPDATE requests SET status='Approved' WHERE id=?",(rid,))
+  else:
+   flash("Unknown request kind.","error"); return redirect(url_for("ng_admin_panel"))
+ flash("Request "+action+"ed.")
+ return redirect(url_for("ng_admin_panel"))
+
+@app.route("/admin/user/<int:uid>/balance",methods=["POST"])
+@ng_admin_required
+def ng_admin_balance(uid):
+ try:
+  value=int(request.form.get("balance",""))
+  if value<0: raise ValueError()
+ except ValueError:
+  flash("Enter a non-negative whole-number balance.","error"); return redirect(url_for("ng_admin_panel"))
+ now=datetime.now().isoformat(); reason=request.form.get("reason","Admin adjustment")[:200]
+ with con() as c:
+  r=c.execute("SELECT balance FROM users WHERE id=?",(uid,)).fetchone()
+  if not r: flash("User not found.","error"); return redirect(url_for("ng_admin_panel"))
+  old=int(r["balance"] or 0); c.execute("UPDATE users SET balance=? WHERE id=?",(value,uid))
+  c.execute("INSERT INTO admin_balance_audit(admin_user_id,target_user_id,old_balance,new_balance,reason,created) VALUES(?,?,?,?,?,?)",(user()["id"],uid,old,value,reason,now))
+  c.execute("INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)",(uid,"Admin Adjustment",value-old,reason,"Completed",now))
+ flash("Balance updated."); return redirect(url_for("ng_admin_panel"))
+
+@app.route("/admin/user/<int:uid>/password",methods=["POST"])
+@ng_admin_required
+def ng_admin_password(uid):
+ password=request.form.get("password","")
+ if len(password)<8: flash("Password must contain at least 8 characters.","error"); return redirect(url_for("ng_admin_panel"))
+ with con() as c:
+  cols={r["name"] for r in c.execute("PRAGMA table_info(users)").fetchall()}
+  field="password_hash" if "password_hash" in cols and "password" not in cols else "password"
+  c.execute("UPDATE users SET "+field+"=? WHERE id=?",(generate_password_hash(password),uid))
+ flash("Password changed."); return redirect(url_for("ng_admin_panel"))
+
+@app.route("/admin/product/<int:pid>",methods=["POST"])
+@ng_admin_required
+def ng_admin_product(pid):
+ if not any(p["id"]==pid for p in P): flash("Product not found.","error"); return redirect(url_for("ng_admin_panel"))
+ locked=1 if request.form.get("locked")=="1" else 0
+ income=1 if request.form.get("income_enabled")=="1" else 0
+ with con() as c:
+  c.execute("INSERT INTO product_controls(product_id,locked,income_enabled) VALUES(?,?,?) ON CONFLICT(product_id) DO UPDATE SET locked=excluded.locked,income_enabled=excluded.income_enabled",(pid,locked,income))
+ flash("Product settings saved."); return redirect(url_for("ng_admin_panel"))
+
+@app.route("/internal/daily-earnings",methods=["GET","POST"])
+def ng_daily_earnings_job():
+ import hmac
+ secret=os.environ.get("EARNINGS_CRON_SECRET","")
+ supplied=request.headers.get("X-Cron-Secret","") or request.args.get("key","")
+ if not secret or not hmac.compare_digest(secret,supplied): return "Unauthorized",401
+ ng_process_due_earnings()
+ return "Daily earnings processed",200
+
+
+def ng_ensure_deposit_pending_request():
+ # This wrapper runs after the existing deposit view, so its normal validation and payment flow remain intact.
+ original = app.view_functions.get("deposit")
+ if original is None or getattr(original, "_ng_pending_wrapper", False): return
+ @wraps(original)
+ def wrapped(*args, **kwargs):
+  before_uid = session.get("uid")
+  response = original(*args, **kwargs)
+  if request.method == "POST" and before_uid:
+   try:
+    amount = int(request.form.get("amount", "0"))
+   except (TypeError, ValueError):
+    amount = 0
+   phone = (request.form.get("phone") or request.form.get("payment_phone") or request.form.get("number") or "").strip()
+   network = (request.form.get("network") or "").strip()
+   # Avoid creating requests for blank/invalid submissions.
+   if amount >= 5000 and phone and network:
+    with con() as c:
+     recent = c.execute("SELECT id FROM requests WHERE user_id=? AND lower(kind)='deposit' AND amount=? AND phone=? AND lower(status) IN ('pending','waiting') ORDER BY id DESC LIMIT 1", (before_uid, amount, phone)).fetchone()
+     if not recent:
+      c.execute("INSERT INTO requests(user_id,kind,amount,phone,name,status,created,network,reference) VALUES(?,?,?,?,?,?,?,?,?)",
+       (before_uid,"deposit",amount,phone,"","Pending",datetime.now().isoformat(),network,(request.form.get("reference") or "").strip()))
+  return response
+ wrapped._ng_pending_wrapper = True
+ app.view_functions["deposit"] = wrapped
+
+ng_ensure_deposit_pending_request()
 
 if __name__=="__main__":app.run(debug=True)
