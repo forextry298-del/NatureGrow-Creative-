@@ -1,1 +1,29 @@
-{% extends "base.html" %}{% block heading %}NatureGrow{% endblock %}{% block content %}<section class="hero"><h1>NatureGrow</h1><p>Grow Nature · Save Energy</p></section><section class="balance"><div><small>Balance</small><h1>{{money(u['balance'])}}</h1></div><a class="pill" href="{{url_for('deposit')}}">Deposit</a></section><section class="balance"><div><small>Growth Balance</small><h1 class="blue">UGX 0</h1></div></section><h2 class="section-title">Products</h2>{% for p in products[:3] %}<article class="product light"><img src="{{url_for('static',filename='images/'+p.image)}}" alt="{{p.name}}"><div class="info"><div class="row"><b>{{p.name}}</b><strong>{{money(p.price)}}</strong></div><p>Daily <span class="blue">{{money(p.daily)}}</span></p><p>Total <span class="blue">{{money(p.daily*60)}}</span></p><form method="post" action="{{url_for('invest',pid=p.id)}}"><button class="dark full invest-btn">Invest Now</button></form></div></article>{% endfor %}<a class="wide" href="{{url_for('product_list')}}">All Products <span>›</span></a><div class="shortcuts"><a href="{{url_for('projects')}}"><span>▱</span><small>Projects</small></a><a href="{{url_for('history')}}"><span>◷</span><small>History</small></a><a href="{{url_for('checkin')}}"><span>♧</span><small>Check-in</small></a><a href="{{url_for('support')}}"><span>☏</span><small>Support</small></a></div>{% endblock %}
+{% extends "base.html" %}
+{% block heading %}NatureGrow{% endblock %}
+{% block content %}
+<div class="home-page">
+  <section class="home-hero">
+    <div class="hero-notice" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></div>
+    <div class="hero-copy"><h1>NatureGrow Collective</h1><p>Grow Nature Save Energy</p></div>
+  </section>
+  <section class="home-balance">
+    <div class="balance-top"><div><small>My Balance</small><h1>{{money(u['balance'])}}</h1><p>Spendable · Withdraw anytime</p></div><a class="deposit-action" href="{{url_for('deposit')}}">Deposit</a></div>
+    <div class="balance-dots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i class="selected"></i><i></i><i></i></div>
+  </section>
+  <section class="home-growth"><small>Growth Balance</small><h2 class="growth-value">UGX 0</h2><p>Growth earnings · Released to balance after 60 days</p></section>
+  <h2 class="home-section-title"><span>🌿</span> Farm Growth Products</h2>
+  {% for p in products[:3] %}
+  <article class="home-product">
+    <img src="{{url_for('static',filename='images/'+p.image)}}" alt="{{p.name}}">
+    <div class="home-product-info">
+      <div class="home-product-row"><b>{{p.name.replace('Plot-', 'Plot-')}}</b><strong>{{money(p.price)}}</strong></div>
+      <p>Daily Earn {{money(p.daily)}} <span class="dot-sep">·</span> Validity 60 days</p>
+      <p class="total-line">Total Earning {{money(p.daily*60)}}</p>
+      <form method="post" action="{{url_for('invest',pid=p.id)}}"><button class="home-invest" type="submit">Invest Now</button></form>
+    </div>
+  </article>
+  {% endfor %}
+  <a class="home-all-products" href="{{url_for('product_list')}}">All Products <span>›</span></a>
+  <div class="shortcuts"><a href="{{url_for('projects')}}"><span>▱</span><small>Projects</small></a><a href="{{url_for('history')}}"><span>◷</span><small>History</small></a><a href="{{url_for('checkin')}}"><span>♧</span><small>Check-in</small></a><a href="{{url_for('support')}}"><span>☏</span><small>Support</small></a></div>
+</div>
+{% endblock %}
