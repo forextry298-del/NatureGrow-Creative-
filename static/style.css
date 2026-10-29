@@ -337,3 +337,35 @@ html[data-theme="light"] body .team-level-icon svg,
 html[data-theme="light"] body .team-summary h2 svg { stroke:currentColor !important; opacity:1 !important; }
 html[data-theme="light"] body .team-level-card .team-rate { background:#e5edd8 !important; color:#245d37 !important; border:1px solid #c4d6b2 !important; }
 .team-main-icon, .team-copy-btn, .team-level-icon { visibility:visible !important; }
+
+
+/* Team Overview compact sizing and theme-aware contrast (light + dark) */
+.team-summary h2{font-size:20px!important;line-height:1.25}
+.team-summary h2 svg{width:22px;height:22px}
+.team-summary .stats b{font-size:23px!important;line-height:1.2}
+.team-summary .stats small{font-size:12px!important;line-height:1.3;display:block;margin-top:5px}
+.team-level-card{padding:15px 17px!important;margin-bottom:13px}
+.team-level-heading{gap:8px}
+.team-level-heading h2{font-size:19px!important;line-height:1.2}
+.team-level-icon{width:29px;height:29px;flex-basis:29px;border-radius:9px}
+.team-level-icon svg{width:20px;height:20px}
+.team-level-card .team-rate{font-size:12px!important;padding:5px 9px}
+.team-level-description{font-size:13px!important;line-height:1.4;margin-top:9px}
+
+/* Dark theme: do not use dark green text on charcoal cards */
+html:not([data-theme="light"]) body .team-summary h2,
+html:not([data-theme="light"]) body .team-summary .stats b,
+html:not([data-theme="light"]) body .team-level-card .team-level-heading h2{color:#f0f5ed!important}
+html:not([data-theme="light"]) body .team-summary .stats small,
+html:not([data-theme="light"]) body .team-level-card .team-level-description{color:#d0d8cf!important;opacity:1!important}
+html:not([data-theme="light"]) body .team-level-card{background:#24262b!important;border-color:#41454b!important}
+html:not([data-theme="light"]) body .team-level-icon{background:#303b33!important;border:1px solid #4b7055!important;color:#8ed39b!important;opacity:1!important}
+html:not([data-theme="light"]) body .team-level-card .team-rate{background:#303b33!important;color:#a5e2ad!important;border:1px solid #4b7055!important}
+html:not([data-theme="light"]) body .team-summary h2 svg{stroke:#8ed39b!important}
+@media(max-width:390px){
+ .team-level-card{padding:13px 14px!important}
+ .team-level-heading h2{font-size:18px!important}
+ .team-level-description{font-size:12px!important}
+ .team-summary .stats b{font-size:21px!important}
+ .team-summary .stats small{font-size:11px!important}
+}
