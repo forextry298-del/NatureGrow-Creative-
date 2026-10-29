@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block heading %}Announcements{% endblock %}
+{% block content %}
+<section class="card announcement-page">
+<h2>Announcements</h2>
+<p class="muted">Updates from NatureGrow Collective</p>
+{% if rows %}
+{% for item in rows %}<article class="announcement-item"><h3>{{item.title}}</h3><p>{{item.body}}</p><small>{{item.created[:16].replace('T',' ')}}</small></article>{% endfor %}
+{% else %}<div class="announcement-empty"><span>♧</span><p>No announcements yet.</p><small>New updates will appear here.</small></div>{% endif %}
+</section>
+{% endblock %}

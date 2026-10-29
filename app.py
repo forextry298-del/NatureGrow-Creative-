@@ -13,7 +13,8 @@ with con() as c:
  CREATE TABLE IF NOT EXISTS tx(id INTEGER PRIMARY KEY,user_id INTEGER,kind TEXT,amount INTEGER,note TEXT,status TEXT,created TEXT);
  CREATE TABLE IF NOT EXISTS projects(id INTEGER PRIMARY KEY,user_id INTEGER,product TEXT,price INTEGER,daily INTEGER,created TEXT);
  CREATE TABLE IF NOT EXISTS checkins(user_id INTEGER,day TEXT,UNIQUE(user_id,day));
- CREATE TABLE IF NOT EXISTS requests(id INTEGER PRIMARY KEY,user_id INTEGER,kind TEXT,amount INTEGER,phone TEXT,name TEXT,status TEXT,created TEXT);""")
+ CREATE TABLE IF NOT EXISTS requests(id INTEGER PRIMARY KEY,user_id INTEGER,kind TEXT,amount INTEGER,phone TEXT,name TEXT,status TEXT,created TEXT);
+ CREATE TABLE IF NOT EXISTS announcements(id INTEGER PRIMARY KEY,title TEXT NOT NULL,body TEXT NOT NULL,created TEXT NOT NULL);""")
 def user():
  if "uid" not in session:return None
  with con() as c:return c.execute("SELECT * FROM users WHERE id=?",(session["uid"],)).fetchone()
@@ -126,6 +127,11 @@ def checkin():
 def history():
  with con() as c:rows=c.execute("SELECT * FROM tx WHERE user_id=? ORDER BY id DESC",(user()["id"],)).fetchall();reqs=c.execute("SELECT * FROM requests WHERE user_id=? ORDER BY id DESC",(user()["id"],)).fetchall()
  return render_template("history.html",rows=rows,reqs=reqs)
+@app.route("/announcements")
+@need
+def announcements():
+ with con() as c: rows=c.execute("SELECT title,body,created FROM announcements ORDER BY id DESC").fetchall()
+ return render_template("announcements.html",rows=rows)
 @app.route("/support")
 @need
 def support():return render_template("support.html")
