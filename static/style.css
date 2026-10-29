@@ -211,3 +211,63 @@ html[data-theme="light"] .announcement-empty{color:#526b54}
 html[data-theme="light"] .announcement-empty p{color:#164e32}
 html[data-theme="light"] .announcement-empty span{color:#4b9a5e}
 html[data-theme="light"] .bottom-nav a.active svg{stroke-width:2.4}
+
+
+/* NatureGrow botanical light theme refinement: richer cream, stronger greens, visible leaf line-art */
+html[data-theme="light"] body,
+html[data-theme="light"] .home-page {
+  background-color:#e5ebd0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='190' height='210' viewBox='0 0 190 210'%3E%3Cg fill='none' stroke='%237b9861' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' opacity='.22'%3E%3Cpath d='M8 78 C35 57 42 34 39 12 C20 25 7 48 8 78Z'/%3E%3Cpath d='M9 77 Q23 48 38 15 M39 45 Q61 31 67 9 Q43 14 39 45Z'/%3E%3Cpath d='M151 202 C143 170 157 144 183 128 C184 159 174 185 151 202Z'/%3E%3Cpath d='M151 201 Q164 167 181 132 M151 175 Q128 160 125 137 Q147 146 151 175Z'/%3E%3Cpath d='M105 105 C123 91 128 70 123 52 C107 66 101 85 105 105Z'/%3E%3Cpath d='M105 105 L122 55 M106 91 Q87 81 85 63 Q103 72 106 91Z'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat:repeat;
+  color:#174b31;
+}
+html[data-theme="light"] .top{background:#f4f2e4;border-bottom-color:#cbd8b8;color:#164b30}
+html[data-theme="light"] .top .back{background:#dce8c7;border-color:#b7cba0;color:#164b30}
+html[data-theme="light"] .card,
+html[data-theme="light"] .balance,
+html[data-theme="light"] .product,
+html[data-theme="light"] .shortcuts a,
+html[data-theme="light"] .home-balance,
+html[data-theme="light"] .home-growth,
+html[data-theme="light"] .profile-stat,
+html[data-theme="light"] .profile-harvest,
+html[data-theme="light"] .profile-menu-item{
+  background:#fffdf5;color:#174b31;border-color:#bdcda8;
+  box-shadow:0 4px 12px rgba(39,73,35,.10)
+}
+html[data-theme="light"] .primary,
+html[data-theme="light"] .invest-btn,
+html[data-theme="light"] .home-invest,
+html[data-theme="light"] .deposit-action,
+html[data-theme="light"] .pill,
+html[data-theme="light"] .dark{
+  background:#438b55;color:#fff;border-color:#387849;
+}
+html[data-theme="light"] .home-all-products,
+html[data-theme="light"] .summary,
+html[data-theme="light"] .wide,
+html[data-theme="light"] .notice{
+  background:#d5e3bd;color:#174b31;border-color:#9fb98b;
+}
+html[data-theme="light"] .home-section-title,
+html[data-theme="light"] .hero h1,
+html[data-theme="light"] .home-product-row b,
+html[data-theme="light"] .profile-stat h2{color:#174b31}
+html[data-theme="light"] .home-product{background:#fffdf5;border-color:#bdcda8;color:#174b31}
+html[data-theme="light"] .home-product-row strong,
+html[data-theme="light"] .home-product-info .total-line,
+html[data-theme="light"] .home-growth h2,
+html[data-theme="light"] .profile-stat .growth-value,
+html[data-theme="light"] .profile-harvest strong{color:#2877c7}
+html[data-theme="light"] .bottom-nav{background:#f4f2e4;border-color:#bdcda8;box-shadow:0 -3px 13px rgba(39,73,35,.12)}
+html[data-theme="light"] .bottom-nav a.active{color:#347e4a}
+html[data-theme="light"] .card input,
+html[data-theme="light"] .amounts button,
+html[data-theme="light"] .network-pills span,
+html[data-theme="light"] .invite,
+html[data-theme="light"] .tag{background:#edf0df;color:#174b31;border-color:#bdcda8}
+html[data-theme="light"] .menu a{color:#174b31;border-bottom-color:#cbd8b8}
+html[data-theme="light"] .muted,
+html[data-theme="light"] .profile-stat small,
+html[data-theme="light"] .profile-stat p,
+html[data-theme="light"] .profile-harvest span{color:#536b50}
