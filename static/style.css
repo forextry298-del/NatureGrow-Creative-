@@ -323,3 +323,17 @@ html[data-theme="light"] .team-level-description{color:#435b43}
 html[data-theme="light"] .team-level-icon{background:#e1efd7;color:#267746;border-color:#b9d5aa}
 html[data-theme="light"] .team-summary .stats b{color:#174b31}
 html[data-theme="light"] .team-summary .stats small{color:#4b6349}
+
+
+/* FORCE Team Overview contrast: override earlier theme rules and stale selectors */
+html[data-theme="light"] body .team-summary h2,
+html[data-theme="light"] body .team-summary .stats b,
+html[data-theme="light"] body .team-level-card .team-level-heading h2 { color:#174b31 !important; }
+html[data-theme="light"] body .team-summary .stats small,
+html[data-theme="light"] body .team-level-card .team-level-description { color:#435b43 !important; opacity:1 !important; }
+html[data-theme="light"] body .team-level-card { background:#fffdf5 !important; border:1px solid #bdcda8 !important; }
+html[data-theme="light"] body .team-level-icon { background:#e1efd7 !important; border:1px solid #a9c994 !important; color:#236b40 !important; opacity:1 !important; }
+html[data-theme="light"] body .team-level-icon svg,
+html[data-theme="light"] body .team-summary h2 svg { stroke:currentColor !important; opacity:1 !important; }
+html[data-theme="light"] body .team-level-card .team-rate { background:#e5edd8 !important; color:#245d37 !important; border:1px solid #c4d6b2 !important; }
+.team-main-icon, .team-copy-btn, .team-level-icon { visibility:visible !important; }
