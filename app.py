@@ -55,9 +55,42 @@ with con() as c:
    else:
     _p.pop('sold_out', None)
 
+def process_due_earnings(uid):
+ # Catch up full 24-hour earning periods, limited to each product's validity.
+ # A unique project/day key prevents duplicate credits.
+ now = datetime.now()
+ with con() as c:
+  c.execute("CREATE TABLE IF NOT EXISTS project_earnings (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL, user_id INTEGER NOT NULL, day_no INTEGER NOT NULL, amount INTEGER NOT NULL, credited_at TEXT NOT NULL, UNIQUE(project_id, day_no))")
+  cols = {r["name"] for r in c.execute("PRAGMA table_info(projects)").fetchall()}
+  if "days" not in cols:
+   c.execute("ALTER TABLE projects ADD COLUMN days INTEGER DEFAULT 60")
+  rows = c.execute("SELECT * FROM projects WHERE user_id=? ORDER BY id", (uid,)).fetchall()
+  for project in rows:
+   try:
+    start = datetime.fromisoformat(str(project["created"]).replace("Z", "+00:00"))
+    if start.tzinfo is not None:
+     start = start.replace(tzinfo=None)
+    validity = max(1, int(project["days"] or 60))
+    elapsed = max(0, int((now - start).total_seconds() // 86400))
+    due = min(validity, elapsed)
+    existing = c.execute("SELECT COUNT(*) n FROM project_earnings WHERE project_id=?", (project["id"],)).fetchone()["n"]
+    for day_no in range(int(existing) + 1, due + 1):
+     amount = max(0, int(project["daily"] or 0))
+     cur = c.execute("INSERT OR IGNORE INTO project_earnings(project_id,user_id,day_no,amount,credited_at) VALUES(?,?,?,?,?)", (project["id"], uid, day_no, amount, now.isoformat()))
+     if cur.rowcount:
+      c.execute("UPDATE users SET balance=balance+? WHERE id=?", (amount, uid))
+      c.execute("INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)", (uid, "Product Income", amount, str(project["product"]) + " daily income (day " + str(day_no) + ")", "Completed", now.isoformat()))
+   except (ValueError, TypeError, KeyError):
+    continue
+
 def user():
  if "uid" not in session:return None
- with con() as c:return c.execute("SELECT * FROM users WHERE id=?",(session["uid"],)).fetchone()
+ uid = session["uid"]
+ with con() as c:
+  exists = c.execute("SELECT id FROM users WHERE id=?", (uid,)).fetchone()
+ if not exists:return None
+ process_due_earnings(uid)
+ with con() as c:return c.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
 def need(f):
  @wraps(f)
  def w(*a,**k):
@@ -117,8 +150,11 @@ def invest(pid):
 @app.route("/projects")
 @need
 def projects():
- with con() as c:rows=c.execute("SELECT * FROM projects WHERE user_id=? ORDER BY id DESC",(user()["id"],)).fetchall()
- return render_template("projects.html",rows=rows)
+ u = user()
+ with con() as c:
+  rows = c.execute("SELECT p.*, (SELECT COUNT(*) FROM project_earnings e WHERE e.project_id=p.id) AS credited_days FROM projects p WHERE p.user_id=? ORDER BY p.id DESC", (u["id"],)).fetchall()
+ product_by_name = {p["name"]: p for p in P}
+ return render_template("projects.html", rows=rows, product_by_name=product_by_name)
 @app.route("/team")
 @need
 def team():
@@ -318,7 +354,7 @@ def profile():
  with con() as c:
   rows=c.execute("SELECT * FROM projects WHERE user_id=? ORDER BY id DESC",(u["id"],)).fetchall()
  active=len(rows)
- harvest=sum(int(r["daily"])*60 for r in rows)
+ harvest=sum(int(r["daily"])*int(r["days"] or 60) for r in rows)
  return render_template("profile.html",u=u,rows=rows,active=active,harvest=harvest)
 @app.route("/settings",methods=["GET","POST"])
 @need
