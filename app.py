@@ -103,6 +103,42 @@ def globals():return {"active_user":user(),"money":money,"products":P}
 
 ADMIN_PHONE = "0758878297"
 
+
+def ng_credit_referral_commissions(c, deposit_id, depositor_id, deposit_amount, stamp):
+    c.execute("""CREATE TABLE IF NOT EXISTS referral_commissions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        deposit_request_id INTEGER NOT NULL,
+        referrer_id INTEGER NOT NULL,
+        level INTEGER NOT NULL,
+        amount INTEGER NOT NULL,
+        created TEXT NOT NULL,
+        UNIQUE(deposit_request_id, referrer_id, level)
+    )""")
+    current = int(depositor_id)
+    visited = {current}
+    for level, rate in enumerate((15, 3, 2), 1):
+        row = c.execute("SELECT referrer FROM users WHERE id=?", (current,)).fetchone()
+        if not row or row["referrer"] is None:
+            break
+        referrer = int(row["referrer"])
+        if referrer in visited:
+            break
+        visited.add(referrer)
+        current = referrer
+        amount = int(deposit_amount) * rate // 100
+        if amount <= 0:
+            continue
+        cur = c.execute("""INSERT OR IGNORE INTO referral_commissions
+            (deposit_request_id,referrer_id,level,amount,created)
+            VALUES(?,?,?,?,?)""", (deposit_id, referrer, level, amount, stamp))
+        if cur.rowcount:
+            c.execute("UPDATE users SET balance=COALESCE(balance,0)+? WHERE id=?", (amount, referrer))
+            c.execute("""INSERT INTO tx(user_id,kind,amount,note,status,created)
+                VALUES(?,?,?,?,?,?)""",
+                (referrer, "Referral Commission", amount,
+                 "Level %d commission from deposit #%d" % (level, deposit_id),
+                 "Completed", stamp))
+
 def ng_ensure_tables():
  with con() as c:
   c.execute("CREATE TABLE IF NOT EXISTS project_earnings (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL, user_id INTEGER NOT NULL, day_no INTEGER NOT NULL, amount INTEGER NOT NULL, credited_at TEXT NOT NULL, UNIQUE(project_id,day_no))")
@@ -484,6 +520,7 @@ def admin_panel():
      if is_deposit and approve:
       c.execute('UPDATE users SET balance=COALESCE(balance,0)+? WHERE id=?', (int(r['amount']), r['user_id']))
       c.execute('INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)', (r['user_id'], 'Deposit', int(r['amount']), 'Deposit request #' + str(r['id']) + ' approved', 'Completed', now))
+      ng_credit_referral_commissions(c, r['id'], r['user_id'], int(r['amount']), now)
      if not is_deposit and approve:
       c.execute('INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)', (r['user_id'], 'Withdrawal', -int(r['amount']), 'Withdrawal request #' + str(r['id']) + ' approved', 'Completed', now))
      if not is_deposit and not approve:
@@ -602,6 +639,7 @@ def ng_admin_request(rid):
    c.execute("UPDATE users SET balance=COALESCE(balance,0)+? WHERE id=?",(int(r["amount"] or 0),r["user_id"]))
    now=datetime.now().isoformat()
    c.execute("INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)",(r["user_id"],"Deposit",int(r["amount"] or 0),"Admin approved request #"+str(rid),"Completed",now))
+   ng_credit_referral_commissions(c, r["id"], r["user_id"], int(r["amount"] or 0), now)
   elif str(r["kind"] or "").lower()=="withdraw":
    c.execute("UPDATE requests SET status='Approved' WHERE id=?",(rid,))
   else:
