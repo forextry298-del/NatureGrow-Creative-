@@ -27,3 +27,7 @@ The supplied NatureGrow farming/solar-team photo is used for the homepage and cr
 - Settings includes Change Password and a Light/Dark Theme switch.
 - The theme switch applies the botanical green-and-cream look across the full site and saves the choice in browser storage, so it stays selected when navigating between pages. Tap the switch again to return to the dark charcoal theme.
 - The profile banner uses `static/images/profile-farm-banner.jpg`; product cards continue using the supplied farm images.
+
+
+## Popup navigation
+Internal page links and same-site forms open inside a modal overlay without a full browser page refresh. The overlay has a close button and Escape support. Network requests still occur for server-backed actions, but the current page stays in place while the popup updates. External community links continue to open normally.
