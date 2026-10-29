@@ -21,6 +21,17 @@ with con() as c:
   try: c.execute(f"ALTER TABLE requests ADD COLUMN {column} {definition}")
   except sqlite3.OperationalError: pass
 
+# Withdrawal fee and requested amount fields.
+with con() as c:
+ for column, definition in [
+  ("requested_amount", "INTEGER DEFAULT 0"),
+  ("fee", "INTEGER DEFAULT 0")
+ ]:
+  try:
+   c.execute(f"ALTER TABLE requests ADD COLUMN {column} {definition}")
+  except sqlite3.OperationalError:
+   pass
+
 def user():
  if "uid" not in session:return None
  with con() as c:return c.execute("SELECT * FROM users WHERE id=?",(session["uid"],)).fetchone()
@@ -115,18 +126,40 @@ def withdraw():
  u=user()
  if request.method=="POST":
   try:a=int(request.form.get("amount","0"))
-  except:a=0
-  ph=request.form.get("phone","").strip();name=request.form.get("name","").strip()
-  if not name or not ph or a<5000 or a%1000:flash("Enter name, phone and amount of at least UGX 5,000 in multiples of 1,000.","error")
-  elif a>u["balance"]:flash("Insufficient available balance.","error")
+  except (ValueError, TypeError):a=0
+  ph=request.form.get("phone","").strip()
+  name=request.form.get("name","").strip()
+  if not name or not ph or a<5000 or a%1000:
+   flash("Enter your name, phone and an amount of at least UGX 5,000 in multiples of UGX 1,000.","error")
   else:
+   fee=a//10
+   payout=a-fee
+   now=datetime.now().isoformat()
    with con() as c:
-    pending=c.execute("SELECT COALESCE(SUM(amount),0) n FROM requests WHERE user_id=? AND kind='Withdrawal' AND status='Pending'",(u["id"],)).fetchone()["n"]
-    if a > u["balance"]-pending:
-     flash("Your amount exceeds the available balance after pending withdrawals.","error")
+    # Deduct the full request atomically; concurrent requests cannot overspend.
+    result=c.execute(
+     "UPDATE users SET balance=balance-? WHERE id=? AND balance>=?",
+     (a,u["id"],a)
+    )
+    if result.rowcount != 1:
+     flash("Insufficient available balance.","error")
      return redirect(url_for("withdraw"))
-    c.execute("INSERT INTO requests(user_id,kind,amount,phone,name,status,created) VALUES(?,?,?,?,?,?,?)",(u["id"],"Withdrawal",a,ph,name,"Pending",datetime.now().isoformat()))
-   flash("Withdrawal request submitted and is pending processing.");return redirect(url_for("history"))
+
+    # amount is the net payout; requested_amount and fee preserve the full breakdown.
+    c.execute("""INSERT INTO requests
+     (user_id,kind,amount,phone,name,status,created,requested_amount,fee)
+     VALUES(?,?,?,?,?,?,?,?,?)""",
+     (u["id"],"Withdrawal",payout,ph,name,"Pending",now,a,fee))
+
+    c.execute("""INSERT INTO tx
+     (user_id,kind,amount,note,status,created)
+     VALUES(?,?,?,?,?,?)""",
+     (u["id"],"Withdrawal",-a,
+      f"Request UGX {a:,}; fee UGX {fee:,}; payout UGX {payout:,}",
+      "Pending",now))
+
+   flash(f"Withdrawal submitted. UGX {a:,} deducted; fee UGX {fee:,}; payout UGX {payout:,} pending processing.")
+   return redirect(url_for("history"))
  return render_template("withdraw.html",u=u)
 @app.route("/checkin",methods=["GET","POST"])
 @need
