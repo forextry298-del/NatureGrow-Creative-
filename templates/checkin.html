@@ -1,66 +1,85 @@
 {% extends "base.html" %}
 {% block heading %}Daily Check-in{% endblock %}
 {% block content %}
-<section class="checkin-bonus card">
-  <div class="checkin-bonus-icon" aria-hidden="true">
-    <svg viewBox="0 0 48 48"><path d="M24 4c-4 8-11 13-11 22a11 11 0 0 0 22 0c0-9-7-14-11-22Z"/><path d="M10 28c-3 2-5 5-5 9a8 8 0 0 0 15 4"/></svg>
-  </div>
-  <div class="checkin-bonus-copy">
-    <h2>Daily Oil Bonus</h2>
-    <p>Earn <strong>UGX 1,000</strong> every day</p>
-  </div>
-  {% if claimed %}
-  <button class="checkin-claimed" disabled><span>✓</span> Claimed</button>
-  {% else %}
-  <form method="post" class="checkin-claim-form"><button class="checkin-claim" type="submit">Claim UGX 1,000</button></form>
+<style>
+.nature-check{font-size:12px;color:#eee}
+.nature-check .nc-card{background:#2b2624;border:1px solid #49413e;border-radius:16px;padding:12px;margin:8px 0}
+.nature-check .nc-bonus{display:flex;align-items:center;gap:10px}
+.nature-check .nc-icon{width:44px;height:46px;flex-shrink:0;border-radius:13px;background:#171312;display:grid;place-items:center;font-size:23px}
+.nature-check .nc-copy{flex:1;min-width:0}
+.nature-check h2{font-size:14px;margin:0 0 4px}
+.nature-check p{font-size:12px;line-height:1.4;color:#aaa09c;margin:4px 0}
+.nature-check .nc-btn{border:0;border-radius:20px;padding:8px 10px;font-size:11px;font-weight:bold;background:#287ff0;color:white}
+.nature-check .nc-btn:disabled{background:#393331;color:#aaa}
+.nature-check .nc-title{font-size:13px;margin:0 0 10px}
+.nature-check .nc-blue{color:#287ff0;font-size:18px;margin-right:7px}
+.nature-check .nc-clock{background:#37312f;border-radius:12px;text-align:center;padding:13px 2px;font-size:clamp(24px,7vw,32px);letter-spacing:3px;font-weight:600;font-variant-numeric:tabular-nums}
+.nature-check .nc-note{text-align:center;margin-top:9px}
+.nature-check ul{padding-left:17px;color:#aaa09c;margin:10px 0 0}
+.nature-check li{padding-bottom:8px;line-height:1.4;font-size:12px}
+.nature-check li:last-child{padding-bottom:0}
+.nature-check strong{color:#287ff0}
+</style>
+<div class="nature-check">
+  <section class="nc-card nc-bonus">
+    <div class="nc-icon">🌿</div>
+    <div class="nc-copy">
+      <h2>Daily Nature Bonus</h2>
+      <p>Earn <strong>UGX 1,000</strong> every day</p>
+      {% if not eligible %}
+        <p style="color:#ff6375">You're not eligible for rewards. Please have an active product first.</p>
+      {% else %}
+        <form method="post">
+          <button class="nc-btn" type="submit" {% if claimed %}disabled{% endif %}>
+            {% if claimed %}✓ Claimed{% else %}Claim UGX 1,000{% endif %}
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="nc-card">
+    <h2 class="nc-title"><span class="nc-blue">◷</span>Next Check-in Available</h2>
+    {% if eligible and claimed %}
+      <div class="nc-clock" id="nature-countdown" data-seconds="{{ seconds_left }}">00:00:00</div>
+      <p class="nc-note">Resets at midnight (00:00)</p>
+    {% elif not eligible %}
+      <p style="color:#ff6375">You're not eligible for rewards. Please have an active product first.</p>
+    {% else %}
+      <div class="nc-clock">Ready to claim</div>
+      <p class="nc-note">Claim your daily reward now.</p>
+    {% endif %}
+  </section>
+
+  {% if eligible and claimed %}
+  <section class="nc-card">
+    <h2 class="nc-title"><span class="nc-blue">▣</span>Checked in today at</h2>
+    <p>{{ checked_label }}</p>
+  </section>
   {% endif %}
-</section>
 
-<section class="checkin-timer-card card">
-  <h3><span class="checkin-blue-icon">◷</span> Next Check-in Available</h3>
-  <div class="checkin-countdown" id="checkin-countdown" data-seconds="{{ seconds_left }}">
-    <span id="countdown-hours">00</span><i>:</i><span id="countdown-minutes">00</span><i>:</i><span id="countdown-seconds">00</span>
-  </div>
-  <p class="checkin-reset-note">Resets at midnight (00:00)</p>
-</section>
-
-{% if claimed %}
-<section class="checkin-time-card card">
-  <div class="checkin-blue-icon">▣</div>
-  <div><h3>Checked in today at</h3><p>{{ checked_label }}</p></div>
-</section>
-{% endif %}
-
-<section class="checkin-how-card card">
-  <h3><span class="checkin-blue-icon">♔</span> How it works</h3>
-  <ul>
-    <li>Check in once every 24 hours to earn <strong>UGX 1,000</strong></li>
-    <li>Bonus is added directly to your balance</li>
-    <li>Come back daily — don't miss a day!</li>
-    <li>Check-in resets at midnight each day</li>
-  </ul>
-</section>
+  <section class="nc-card">
+    <h2 class="nc-title"><span class="nc-blue">♧</span>How it works</h2>
+    <ul>
+      <li>Check in once every day to earn <strong>UGX 1,000</strong>.</li>
+      <li>You must have an active product to qualify.</li>
+      <li>Your bonus is added directly to your balance.</li>
+      <li>Check-in resets at midnight each day.</li>
+    </ul>
+  </section>
+</div>
 <script>
 (function(){
- const root=document.getElementById('checkin-countdown');
- if(!root)return;
- let remaining=Math.max(0,Number(root.dataset.seconds)||0);
- const h=document.getElementById('countdown-hours');
- const m=document.getElementById('countdown-minutes');
- const s=document.getElementById('countdown-seconds');
- function paint(){
-   const hours=Math.floor(remaining/3600);
-   const minutes=Math.floor((remaining%3600)/60);
-   const seconds=remaining%60;
-   h.textContent=String(hours).padStart(2,'0');
-   m.textContent=String(minutes).padStart(2,'0');
-   s.textContent=String(seconds).padStart(2,'0');
- }
- paint();
- const timer=setInterval(function(){
-   if(remaining>0){remaining--;paint();}
-   else{clearInterval(timer);root.setAttribute('aria-label','Next check-in is available. Refresh this page.');}
- },1000);
+  const el=document.getElementById('nature-countdown');
+  if(!el)return;
+  let left=Number(el.dataset.seconds||0);
+  function tick(){
+    const h=Math.floor(left/3600),m=Math.floor((left%3600)/60),s=left%60;
+    el.textContent=[h,m,s].map(v=>String(v).padStart(2,'0')).join(':');
+    if(left>0){left--;setTimeout(tick,1000);}
+    else{location.reload();}
+  }
+  tick();
 })();
 </script>
 {% endblock %}

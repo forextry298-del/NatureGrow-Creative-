@@ -161,15 +161,100 @@ def withdraw():
    flash(f"Withdrawal submitted. UGX {a:,} deducted; fee UGX {fee:,}; payout UGX {payout:,} pending processing.")
    return redirect(url_for("history"))
  return render_template("withdraw.html",u=u)
-@app.route("/checkin",methods=["GET","POST"])
+
+@app.route("/checkin", methods=["GET", "POST"])
 @need
 def checkin():
- today=date.today().isoformat();u=user()
- with con() as c:
-  claimed=c.execute("SELECT 1 FROM checkins WHERE user_id=? AND day=?",(u["id"],today)).fetchone() is not None
-  if request.method=="POST" and not claimed:
-   now=datetime.now().isoformat();c.execute("INSERT INTO checkins VALUES(?,?)",(u["id"],today));c.execute("UPDATE users SET balance=balance+1000 WHERE id=?",(u["id"],));c.execute("INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)",(u["id"],"Bonus",1000,"Daily check-in reward","Completed",now));claimed=True;flash("UGX 1,000 check-in reward added.")
- return render_template("checkin.html",claimed=claimed)
+    from datetime import timedelta
+
+    u = user()
+    now = datetime.now().astimezone()
+
+    with con() as c:
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS checkin_claims (
+                user_id INTEGER PRIMARY KEY,
+                claimed_at TEXT NOT NULL
+            )
+        """)
+
+    def get_claim(c):
+        row = c.execute(
+            "SELECT claimed_at FROM checkin_claims WHERE user_id=?",
+            (u["id"],)
+        ).fetchone()
+        if not row:
+            return None
+        last = datetime.fromisoformat(row["claimed_at"])
+        if last.tzinfo is None:
+            last = last.astimezone()
+        return last
+
+    def remaining(last, current):
+        if last is None:
+            return 0
+        return max(0, int((last + timedelta(hours=24) - current).total_seconds()))
+
+    if request.method == "POST":
+        with con() as c:
+            c.execute("BEGIN IMMEDIATE")
+
+            active = c.execute(
+                "SELECT 1 FROM projects WHERE user_id=? LIMIT 1",
+                (u["id"],)
+            ).fetchone()
+
+            last = get_claim(c)
+            seconds_left = remaining(last, now)
+
+            if not active:
+                flash(
+                    "You're not eligible for rewards. Please have an active product first.",
+                    "error"
+                )
+            elif seconds_left > 0:
+                flash("Your next reward is available after the 24-hour timer ends.", "error")
+            else:
+                stamp = now.isoformat()
+                c.execute("""
+                    INSERT INTO checkin_claims(user_id, claimed_at)
+                    VALUES(?, ?)
+                    ON CONFLICT(user_id)
+                    DO UPDATE SET claimed_at=excluded.claimed_at
+                """, (u["id"], stamp))
+
+                c.execute(
+                    "UPDATE users SET balance=balance+1000 WHERE id=?",
+                    (u["id"],)
+                )
+                c.execute("""
+                    INSERT INTO tx(user_id,kind,amount,note,status,created)
+                    VALUES(?,?,?,?,?,?)
+                """, (
+                    u["id"], "Bonus", 1000,
+                    "Daily Nature Bonus", "Completed", stamp
+                ))
+                flash("UGX 1,000 Daily Nature Bonus added to your balance.")
+
+    with con() as c:
+        active = c.execute(
+            "SELECT 1 FROM projects WHERE user_id=? LIMIT 1",
+            (u["id"],)
+        ).fetchone() is not None
+        last_claim = get_claim(c)
+
+    seconds_left = remaining(last_claim, now)
+    claimed = seconds_left > 0
+
+    return render_template(
+        "checkin.html",
+        claimed=claimed,
+        eligible=active,
+        seconds_left=seconds_left,
+        last_claim=last_claim,
+        checked_label=last_claim.astimezone().strftime("%I:%M %p") if last_claim else ""
+    )
+
 @app.route("/history")
 @need
 def history():
