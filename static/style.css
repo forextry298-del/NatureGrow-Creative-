@@ -369,3 +369,34 @@ html:not([data-theme="light"]) body .team-summary h2 svg{stroke:#8ed39b!importan
  .team-summary .stats b{font-size:21px!important}
  .team-summary .stats small{font-size:11px!important}
 }
+
+/* Deposit network selection and payment-agent steps */
+.network-choice{border:0;padding:0;margin:14px 0 10px;min-width:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.network-choice legend{grid-column:1/-1;font-size:13px;font-weight:700;margin-bottom:3px;color:inherit}
+.network-choice legend span{color:#c43d3d}
+.network-option{display:flex!important;align-items:center;gap:7px;background:#39332f;border:1px solid #514740;border-radius:12px;padding:10px!important;margin:0!important;min-height:48px;cursor:pointer;font-size:11px!important}
+.network-option input{width:16px!important;height:16px;margin:0!important;accent-color:#25834c;flex:0 0 auto}
+.network-logo{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:10px;font-weight:900;flex:0 0 28px;color:#fff}
+.mtn-logo{background:#ffcc00;color:#222}.airtel-logo{background:#e3272b}
+.network-option:has(input:checked){border-color:#39945c;box-shadow:0 0 0 2px #39945c22;background:#253b2c}
+.agent-processing{position:fixed;inset:0;z-index:30;background:#10120feF;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px}
+.agent-processing[hidden]{display:none}
+.agent-spinner{width:42px;height:42px;border:4px solid #ffffff35;border-top-color:#43a66a;border-radius:50%;animation:agent-spin .8s linear infinite;margin-bottom:18px}
+@keyframes agent-spin{to{transform:rotate(360deg)}}
+.agent-processing strong{font-size:18px}.agent-processing p{font-size:13px;color:#d2d8d0}
+.payment-agent-head{display:flex;align-items:center;gap:11px;margin-bottom:14px}.payment-agent-head h2{margin:0 0 4px!important}.payment-agent-head p{margin:0;font-size:12px}.payment-agent-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#e0f1e4;color:#23824b;font-size:24px;font-weight:800}
+.agent-instructions{border:1px solid #a9d8c1;background:#eaf7f0;color:#263d30;border-radius:16px;padding:14px;margin:10px 0}
+.agent-kicker{color:#16824a;font-weight:800;font-size:12px;line-height:1.45;margin:0 0 12px}
+.agent-detail{background:#fff;border-radius:12px;padding:12px;margin:8px 0;display:grid;grid-template-columns:1fr;gap:5px;color:#4b554f}
+.agent-detail strong{font-size:21px;color:#16824a;overflow-wrap:anywhere}.agent-detail span{font-size:12px}
+.copy-agent{justify-self:start;border:0;border-radius:20px;background:#d8f0e3;color:#18784a;padding:7px 11px;font-weight:700;font-size:11px}
+.payment-summary{padding:10px 2px}.payment-summary div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;font-size:12px}.payment-summary strong{text-align:right;overflow-wrap:anywhere}
+.payment-wait{display:flex;gap:9px;background:#f6f0dc;color:#50472e;border-radius:12px;padding:11px;margin:8px 0;font-size:12px}.payment-wait p{margin:4px 0 0;line-height:1.45}.status-dot{width:9px;height:9px;border-radius:50%;background:#d69b2b;margin-top:4px;flex:0 0 9px}
+.secondary{background:#e5eee2;color:#255c39;border:1px solid #bdcfae;border-radius:28px;padding:10px 14px;font-weight:700;font-size:12px}
+html[data-theme="light"] .network-option{background:#edf0df;border-color:#c5d0b5;color:#254d35}
+html[data-theme="light"] .network-option:has(input:checked){background:#dcebd4;border-color:#3b8754}
+html[data-theme="light"] .agent-instructions{background:#eaf7f0;border-color:#a9d8c1;color:#263d30}
+html[data-theme="light"] .agent-detail{background:#fff;color:#4b554f}
+html[data-theme="light"] .secondary{background:#e5eee2;color:#255c39;border-color:#bdcfae}
+html[data-theme="dark"] .agent-instructions{background:#eaf7f0;color:#263d30}
+html[data-theme="dark"] .agent-detail{background:#fff;color:#4b554f}

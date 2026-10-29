@@ -1,1 +1,38 @@
-{% extends "base.html" %}{% block heading %}Deposit{% endblock %}{% block content %}<section class="card compact-card"><h2>Deposit</h2><form method="post"><label>Amount (UGX)<input id="amount" type="number" min="5000" step="1000" name="amount" required placeholder="Enter amount"></label><div class="amounts">{% for n in [40000,50000,100000,250000,500000,1000000,2000000,5000000] %}<button type="button" onclick="document.getElementById('amount').value={{n}}">{{'{:,}'.format(n)}}</button>{% endfor %}</div><label>Mobile Money Number<input name="phone" required inputmode="tel" placeholder="07XXXXXXXX"></label><div class="network-pills"><span>MTN Mobile Money</span><span>Airtel Money</span></div><p class="muted tiny">Requests stay pending until payment is verified.</p><button class="dark full">Submit Request</button></form></section>{% endblock %}
+{% extends "base.html" %}
+{% block heading %}Deposit{% endblock %}
+{% block content %}
+{% if payment_stage %}
+<section class="card compact-card payment-agent-card">
+  <div class="payment-agent-head"><span class="payment-agent-icon" aria-hidden="true">₵</span><div><h2>Payment agent</h2><p class="muted">Selected network: <strong>{{ network }} Mobile Money</strong></p></div></div>
+  <div class="agent-instructions">
+    <p class="agent-kicker">COPY &amp; PAY — SEND YOUR DEPOSIT TO THIS ACCOUNT</p>
+    <div class="agent-detail"><span>{{ network }} Account</span><strong id="agent-number">0700244204</strong><button type="button" class="copy-agent" onclick="copyAgent('agent-number',this)">▢ Copy number</button></div>
+    <div class="agent-detail"><span>Account Name</span><strong id="agent-name">Emmanuel Onen</strong><button type="button" class="copy-agent" onclick="copyAgent('agent-name',this)">▢ Copy name</button></div>
+  </div>
+  <div class="payment-summary"><div><span>Deposit amount</span><strong>UGX {{ '{:,}'.format(amount) }}</strong></div><div><span>Your payment account</span><strong>{{ phone }}</strong></div></div>
+  <div class="payment-wait"><span class="status-dot"></span><div><strong>Payment not yet verified</strong><p>After you send the money, enter the transaction reference below and submit your request. Your balance remains unchanged until verification.</p></div></div>
+  <form method="post" class="deposit-confirm-form">
+    <input type="hidden" name="stage" value="confirm"><input type="hidden" name="amount" value="{{ amount }}"><input type="hidden" name="phone" value="{{ phone }}"><input type="hidden" name="network" value="{{ network }}">
+    <label>Transaction reference (optional)<input name="reference" maxlength="80" placeholder="Enter mobile money transaction ID"></label>
+    <button class="dark full" type="submit">I Have Paid — Submit Request</button>
+  </form>
+  <form method="get"><button class="secondary full" type="submit">Back to Deposit</button></form>
+</section>
+<script>function copyAgent(id,btn){const text=document.getElementById(id).textContent.trim();if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(()=>{const old=btn.textContent;btn.textContent='✓ Copied';setTimeout(()=>btn.textContent=old,1400)}).catch(()=>alert(text))}else{alert(text)}}</script>
+{% else %}
+<section class="card compact-card deposit-form-card">
+  <h2>Deposit</h2>
+  <form method="post" id="deposit-form" onsubmit="showAgentProcessing(event)">
+    <input type="hidden" name="stage" value="continue">
+    <label>Amount (UGX)<input id="amount" type="number" min="5000" step="1000" name="amount" value="{{ amount or '' }}" required placeholder="Enter amount"></label>
+    <div class="amounts">{% for n in [40000,50000,100000,250000,500000,1000000,2000000,5000000] %}<button type="button" onclick="document.getElementById('amount').value={{n}}">{{'{:,}'.format(n)}}</button>{% endfor %}</div>
+    <label>Mobile Money Number<input name="phone" value="{{ phone or '' }}" required inputmode="tel" pattern="[0-9+ ]{9,16}" placeholder="07XXXXXXXX"></label>
+    <fieldset class="network-choice"><legend>Choose your network <span>*</span></legend><label class="network-option"><input type="radio" name="network" value="MTN" required {% if network=='MTN' %}checked{% endif %}><span class="network-logo mtn-logo">MTN</span><span>MTN Mobile Money</span></label><label class="network-option"><input type="radio" name="network" value="Airtel" required {% if network=='Airtel' %}checked{% endif %}><span class="network-logo airtel-logo">A</span><span>Airtel Money</span></label></fieldset>
+    <p class="muted tiny">Your request stays pending until payment is verified.</p>
+    <button class="dark full continue-btn" type="submit" id="continue-btn">Continue</button>
+  </form>
+</section>
+<div class="agent-processing" id="agent-processing" hidden role="status" aria-live="polite"><div class="agent-spinner"></div><strong>Processing your payment agent....</strong><p>Please wait while we prepare the payment instructions.</p></div>
+<script>function showAgentProcessing(e){const form=e.currentTarget;if(!form.reportValidity())return;e.preventDefault();const btn=document.getElementById('continue-btn');btn.disabled=true;btn.textContent='Please wait…';document.getElementById('agent-processing').hidden=false;setTimeout(()=>form.submit(),900)}</script>
+{% endif %}
+{% endblock %}

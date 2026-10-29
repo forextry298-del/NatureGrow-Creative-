@@ -1,6 +1,5 @@
 import os,sqlite3,secrets
-from datetime import datetime,date,timedelta
-from zoneinfo import ZoneInfo
+from datetime import datetime,date
 from functools import wraps
 from flask import Flask,render_template,request,redirect,url_for,session,flash
 from werkzeug.security import generate_password_hash,check_password_hash
@@ -13,13 +12,14 @@ with con() as c:
  c.executescript("""CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY,username TEXT UNIQUE,phone TEXT,password TEXT,invite TEXT UNIQUE,referrer INTEGER,balance INTEGER DEFAULT 0,created TEXT);
  CREATE TABLE IF NOT EXISTS tx(id INTEGER PRIMARY KEY,user_id INTEGER,kind TEXT,amount INTEGER,note TEXT,status TEXT,created TEXT);
  CREATE TABLE IF NOT EXISTS projects(id INTEGER PRIMARY KEY,user_id INTEGER,product TEXT,price INTEGER,daily INTEGER,created TEXT);
- CREATE TABLE IF NOT EXISTS checkins(user_id INTEGER,day TEXT,checked_at TEXT,UNIQUE(user_id,day));
+ CREATE TABLE IF NOT EXISTS checkins(user_id INTEGER,day TEXT,UNIQUE(user_id,day));
  CREATE TABLE IF NOT EXISTS requests(id INTEGER PRIMARY KEY,user_id INTEGER,kind TEXT,amount INTEGER,phone TEXT,name TEXT,status TEXT,created TEXT);
  CREATE TABLE IF NOT EXISTS announcements(id INTEGER PRIMARY KEY,title TEXT NOT NULL,body TEXT NOT NULL,created TEXT NOT NULL);""")
- # Migrate databases created before check-in timestamps were stored.
- cols={row["name"] for row in c.execute("PRAGMA table_info(checkins)").fetchall()}
- if "checked_at" not in cols:
-  c.execute("ALTER TABLE checkins ADD COLUMN checked_at TEXT")
+# Safe migrations for deposit payment details on existing databases.
+with con() as c:
+ for column, definition in [("network", "TEXT DEFAULT ''"), ("reference", "TEXT DEFAULT ''")]:
+  try: c.execute(f"ALTER TABLE requests ADD COLUMN {column} {definition}")
+  except sqlite3.OperationalError: pass
 
 def user():
  if "uid" not in session:return None
@@ -91,15 +91,24 @@ def team():
 @app.route("/deposit",methods=["GET","POST"])
 @need
 def deposit():
- if request.method=="POST":
-  try:a=int(request.form.get("amount","0"))
-  except:a=0
-  ph=request.form.get("phone","").strip()
-  if a<5000 or not ph:flash("Enter at least UGX 5,000 and a phone number.","error")
-  else:
-   with con() as c:c.execute("INSERT INTO requests(user_id,kind,amount,phone,status,created) VALUES(?,?,?,?,?,?)",(user()["id"],"Deposit",a,ph,"Pending",datetime.now().isoformat()))
-   flash("Deposit request submitted. Your balance will update after payment verification.");return redirect(url_for("history"))
- return render_template("deposit.html")
+ if request.method == "POST":
+  stage=request.form.get("stage", "continue")
+  try: amount=int(request.form.get("amount", "0"))
+  except: amount=0
+  phone=request.form.get("phone", "").strip()
+  network=request.form.get("network", "").strip()
+  if amount < 5000 or not phone or network not in ("MTN", "Airtel"):
+   flash("Enter an amount of at least UGX 5,000, your mobile money number, and select MTN or Airtel.", "error")
+   return render_template("deposit.html", amount=amount if amount >= 5000 else "", phone=phone, network=network)
+  if stage == "continue":
+   return render_template("deposit.html", payment_stage=True, amount=amount, phone=phone, network=network)
+  if stage == "confirm":
+   reference=request.form.get("reference", "").strip()
+   with con() as c:
+    c.execute("INSERT INTO requests(user_id,kind,amount,phone,status,created,network,reference) VALUES(?,?,?,?,?,?,?,?)", (user()["id"], "Deposit", amount, phone, "Pending", datetime.now().isoformat(), network, reference))
+   flash("Deposit request submitted. It stays pending until the payment is verified; your balance has not been credited yet.")
+   return redirect(url_for("history"))
+ return render_template("deposit.html", payment_stage=False)
 @app.route("/withdraw",methods=["GET","POST"])
 @need
 def withdraw():
@@ -122,26 +131,12 @@ def withdraw():
 @app.route("/checkin",methods=["GET","POST"])
 @need
 def checkin():
- tz=ZoneInfo("Africa/Kampala")
- now=datetime.now(tz)
- today=now.date().isoformat()
- u=user()
+ today=date.today().isoformat();u=user()
  with con() as c:
-  row=c.execute("SELECT checked_at FROM checkins WHERE user_id=? AND day=?",(u["id"],today)).fetchone()
-  claimed=row is not None
-  checked_at=row["checked_at"] if row else None
+  claimed=c.execute("SELECT 1 FROM checkins WHERE user_id=? AND day=?",(u["id"],today)).fetchone() is not None
   if request.method=="POST" and not claimed:
-   stamp=now.isoformat(timespec="seconds")
-   c.execute("INSERT INTO checkins(user_id,day,checked_at) VALUES(?,?,?)",(u["id"],today,stamp))
-   c.execute("UPDATE users SET balance=balance+1000 WHERE id=?",(u["id"],))
-   c.execute("INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)",(u["id"],"Bonus",1000,"Daily check-in reward","Completed",stamp))
-   claimed=True
-   checked_at=stamp
-   flash("UGX 1,000 check-in reward added.")
-  reset_at=datetime.combine(now.date()+timedelta(days=1),datetime.min.time(),tzinfo=tz)
-  seconds_left=max(0,int((reset_at-now).total_seconds()))
- checked_label=(datetime.fromisoformat(checked_at).strftime("%I:%M %p") if checked_at else ("Earlier today" if claimed else None))
- return render_template("checkin.html",claimed=claimed,checked_at=checked_at,checked_label=checked_label,seconds_left=seconds_left,reset_at=reset_at.isoformat())
+   now=datetime.now().isoformat();c.execute("INSERT INTO checkins VALUES(?,?)",(u["id"],today));c.execute("UPDATE users SET balance=balance+1000 WHERE id=?",(u["id"],));c.execute("INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)",(u["id"],"Bonus",1000,"Daily check-in reward","Completed",now));claimed=True;flash("UGX 1,000 check-in reward added.")
+ return render_template("checkin.html",claimed=claimed)
 @app.route("/history")
 @need
 def history():
