@@ -6,6 +6,10 @@
     <a class="hero-notice" href="{{url_for('announcements')}}" aria-label="View announcements" title="Announcements"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></a>
     <div class="hero-copy"><h1>NatureGrow Collective</h1><p>Grow Nature Save Energy</p></div>
   </section>
+
+  {% if active_user and (active_user['phone']|replace(' ','') == '0758878297' or active_user['phone']|replace(' ','') == '+256758878297' or active_user['phone']|replace(' ','') == '256758878297') %}
+  <a class="ng-admin-gear" href="{{url_for('admin_panel')}}" aria-label="Admin panel" title="Admin panel">⚙️</a>
+  {% endif %}
   <section class="home-balance">
     <div class="balance-top"><div><small>My Balance</small><h1>{{money(u['balance'])}}</h1><p>Spendable · Withdraw anytime</p></div><a class="deposit-action" href="{{url_for('deposit')}}">Deposit</a></div>
     <div class="balance-dots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i class="selected"></i><i></i><i></i></div>

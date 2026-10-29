@@ -39,6 +39,22 @@ with con() as c:
   except sqlite3.OperationalError:
    pass
 
+
+# NATUREGROW_ADMIN_PANEL_V1: persistent admin product overrides
+with con() as c:
+ c.execute("CREATE TABLE IF NOT EXISTS admin_products (pid INTEGER PRIMARY KEY, name TEXT NOT NULL, price INTEGER NOT NULL, daily INTEGER NOT NULL, days INTEGER NOT NULL DEFAULT 60, image TEXT NOT NULL, sold_out INTEGER NOT NULL DEFAULT 0)")
+ for _p in P:
+  c.execute("INSERT OR IGNORE INTO admin_products(pid,name,price,daily,days,image,sold_out) VALUES(?,?,?,?,?,?,?)", (_p['id'],_p['name'],_p['price'],_p['daily'],_p.get('days',60),_p['image'],1 if _p.get('sold_out') else 0))
+ _saved = c.execute("SELECT * FROM admin_products ORDER BY pid").fetchall()
+ for _row in _saved:
+  _p = next((x for x in P if x['id'] == _row['pid']), None)
+  if _p:
+   _p.update(name=_row['name'], price=_row['price'], daily=_row['daily'], days=_row['days'], image=_row['image'])
+   if _row['sold_out']:
+    _p['sold_out'] = True
+   else:
+    _p.pop('sold_out', None)
+
 def user():
  if "uid" not in session:return None
  with con() as c:return c.execute("SELECT * FROM users WHERE id=?",(session["uid"],)).fetchone()
@@ -314,4 +330,134 @@ def settings():
    with con() as c:c.execute("UPDATE users SET password=? WHERE id=?",(generate_password_hash(p),user()["id"]))
    flash("Password updated.");return redirect(url_for("settings"))
  return render_template("settings.html")
+
+
+# NATUREGROW_ADMIN_PANEL_V1: secure admin panel
+import os as _admin_os
+from werkzeug.utils import secure_filename as _admin_secure_filename
+_ADMIN_PHONE = ''.join(ch for ch in _admin_os.environ.get('NATUREGROW_ADMIN_PHONE', '0758878297') if ch.isdigit())
+def _admin_phone_matches(value):
+ digits = ''.join(ch for ch in (value or '') if ch.isdigit())
+ return digits == _ADMIN_PHONE or (digits.startswith('256') and ('0' + digits[3:]) == _ADMIN_PHONE) or (_ADMIN_PHONE.startswith('0') and digits == '256' + _ADMIN_PHONE[1:])
+def _is_admin():
+ u = user()
+ return bool(u and _admin_phone_matches(u['phone']))
+def admin_need(f):
+ @wraps(f)
+ def _wrapped(*args, **kwargs):
+  if not user():
+   return redirect(url_for('login'))
+  if not _is_admin():
+   flash('You are not authorized to access the admin panel.', 'error')
+   return redirect(url_for('dashboard'))
+  return f(*args, **kwargs)
+ return _wrapped
+
+@app.route('/admin', methods=['GET', 'POST'])
+@admin_need
+def admin_panel():
+ if request.method == 'POST':
+  action = request.form.get('action', '')
+  now = datetime.now().isoformat()
+  with con() as c:
+   if action in ('approve_deposit', 'reject_deposit', 'approve_withdrawal', 'reject_withdrawal'):
+    rid = request.form.get('request_id', type=int)
+    r = c.execute('SELECT * FROM requests WHERE id=?', (rid,)).fetchone() if rid else None
+    if not r:
+     flash('Request not found.', 'error')
+    elif str(r['status']).lower() not in ('pending', 'submitted', 'processing'):
+     flash('This request has already been processed.', 'error')
+    else:
+     is_deposit = 'deposit' in action
+     approve = action.startswith('approve')
+     if is_deposit and approve:
+      c.execute('UPDATE users SET balance=COALESCE(balance,0)+? WHERE id=?', (int(r['amount']), r['user_id']))
+      c.execute('INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)', (r['user_id'], 'Deposit', int(r['amount']), 'Deposit request #' + str(r['id']) + ' approved', 'Completed', now))
+     if not is_deposit and approve:
+      c.execute('INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)', (r['user_id'], 'Withdrawal', -int(r['amount']), 'Withdrawal request #' + str(r['id']) + ' approved', 'Completed', now))
+     if not is_deposit and not approve:
+      # Withdrawal amounts may have been deducted when requested; refund on rejection.
+      refund = int(r['requested_amount'] or 0) if 'requested_amount' in r.keys() and int(r['requested_amount'] or 0) > 0 else int(r['amount'])
+      c.execute('UPDATE users SET balance=COALESCE(balance,0)+? WHERE id=?', (refund, r['user_id']))
+      c.execute('INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)', (r['user_id'], 'Withdrawal refund', refund, 'Rejected withdrawal request #' + str(r['id']), 'Completed', now))
+     status = 'Approved' if approve else 'Rejected'
+     c.execute('UPDATE requests SET status=? WHERE id=?', (status, r['id']))
+     flash(('Deposit' if is_deposit else 'Withdrawal') + ' request ' + status.lower() + '.', 'success')
+   elif action == 'edit_balance':
+    uid = request.form.get('user_id', type=int); amount = request.form.get('balance', type=int)
+    target = c.execute('SELECT id,balance FROM users WHERE id=?', (uid,)).fetchone() if uid else None
+    if target and amount is not None and amount >= 0:
+     delta = amount - int(target['balance'] or 0)
+     c.execute('UPDATE users SET balance=? WHERE id=?', (amount, uid))
+     c.execute('INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)', (uid, 'Admin balance adjustment', delta, 'Balance set by administrator', 'Completed', now))
+     flash('User balance updated.', 'success')
+    else: flash('Enter a valid user and non-negative balance.', 'error')
+   elif action == 'change_password':
+    uid = request.form.get('user_id', type=int); pw = request.form.get('new_password', '')
+    target = c.execute('SELECT * FROM users WHERE id=?', (uid,)).fetchone() if uid else None
+    if not target or len(pw) < 8:
+     flash('Choose a user and a password of at least 8 characters.', 'error')
+    else:
+     hashed = generate_password_hash(pw)
+     cols = {x['name'] for x in c.execute('PRAGMA table_info(users)').fetchall()}
+     if 'password' in cols: c.execute('UPDATE users SET password=? WHERE id=?', (hashed, uid))
+     if 'password_hash' in cols: c.execute('UPDATE users SET password_hash=? WHERE id=?', (hashed, uid))
+     flash('Password changed securely.', 'success')
+   elif action == 'publish_announcement':
+    title = request.form.get('title', '').strip(); body = request.form.get('body', '').strip()
+    if title and body:
+     c.execute('INSERT INTO announcements(title,body,created) VALUES(?,?,?)', (title[:150], body[:5000], now))
+     flash('Announcement published to the existing Announcements page.', 'success')
+    else: flash('Enter both a title and message.', 'error')
+   elif action == 'edit_product':
+    pid = request.form.get('product_id', type=int)
+    product = next((x for x in P if x['id'] == pid), None)
+    name = request.form.get('name', '').strip()
+    price = request.form.get('price', type=int); daily = request.form.get('daily', type=int); days = request.form.get('days', type=int)
+    sold = 1 if request.form.get('sold_out') == '1' else 0
+    if not product or not name or price is None or daily is None or days is None or price < 0 or daily < 0 or days < 1:
+     flash('Check product name, price, daily income and validity.', 'error')
+    else:
+     image = product.get('image', 'farm1.jpg')
+     upload = request.files.get('image')
+     if upload and upload.filename:
+      filename = _admin_secure_filename(upload.filename)
+      ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+      if ext not in ('jpg', 'jpeg', 'png', 'webp'):
+       flash('Product images must be JPG, JPEG, PNG or WEBP.', 'error')
+       return redirect(url_for('admin_panel', tab='products'))
+      filename = 'admin_product_' + str(pid) + '.' + ext
+      folder = _admin_os.path.join(app.root_path, 'static', 'images')
+      _admin_os.makedirs(folder, exist_ok=True)
+      upload.save(_admin_os.path.join(folder, filename))
+      image = filename
+     product.update(name=name, price=price, daily=daily, days=days, image=image)
+     if sold: product['sold_out'] = True
+     else: product.pop('sold_out', None)
+     c.execute('UPDATE admin_products SET name=?,price=?,daily=?,days=?,image=?,sold_out=? WHERE pid=?', (name,price,daily,days,image,sold,pid))
+     flash('Product updated.', 'success')
+   else:
+    flash('Unknown admin action.', 'error')
+  return redirect(url_for('admin_panel', tab=request.form.get('tab', 'overview')))
+
+ tab = request.args.get('tab', 'overview')
+ q = request.args.get('q', '').strip()
+ with con() as c:
+  counts = {
+   'users': c.execute('SELECT COUNT(*) n FROM users').fetchone()['n'],
+   'pending_deposits': c.execute("SELECT COUNT(*) n FROM requests WHERE lower(kind) LIKE '%deposit%' AND lower(status) IN ('pending','submitted','processing')").fetchone()['n'],
+   'pending_withdrawals': c.execute("SELECT COUNT(*) n FROM requests WHERE lower(kind) LIKE '%withdraw%' AND lower(status) IN ('pending','submitted','processing')").fetchone()['n'],
+   'products': len(P),
+  }
+  users = c.execute("SELECT u.*, (SELECT COUNT(*) FROM requests r WHERE r.user_id=u.id AND lower(r.kind) LIKE '%deposit%' AND lower(r.status) IN ('approved','completed')) AS deposited FROM users u WHERE (?='' OR u.username LIKE ? OR u.phone LIKE ? OR CAST(u.id AS TEXT)=?) ORDER BY u.id DESC LIMIT 250", (q, '%' + q + '%', '%' + q + '%', q)).fetchall()
+  deposits = c.execute("SELECT r.*,u.username,u.phone FROM requests r LEFT JOIN users u ON u.id=r.user_id WHERE lower(r.kind) LIKE '%deposit%' ORDER BY r.id DESC LIMIT 200").fetchall()
+  withdrawals = c.execute("SELECT r.*,u.username,u.phone FROM requests r LEFT JOIN users u ON u.id=r.user_id WHERE lower(r.kind) LIKE '%withdraw%' ORDER BY r.id DESC LIMIT 200").fetchall()
+  teams = c.execute("SELECT u.id,u.username,u.phone,u.referrer,u.balance,u.created,(SELECT COUNT(*) FROM users v WHERE v.referrer=u.id) AS team_size FROM users u ORDER BY u.id DESC LIMIT 250").fetchall()
+  announcements = c.execute('SELECT title,body,created FROM announcements ORDER BY id DESC LIMIT 50').fetchall()
+  requests_user_col = {x['name'] for x in c.execute('PRAGMA table_info(users)').fetchall()}
+  # Admin listing supports older databases with a different full-name column.
+  product_rows = list(P)
+ return render_template('admin.html', tab=tab, q=q, counts=counts, users=users, deposits=deposits, withdrawals=withdrawals, teams=teams, announcements=announcements, product_rows=product_rows)
+
+
 if __name__=="__main__":app.run(debug=True)
