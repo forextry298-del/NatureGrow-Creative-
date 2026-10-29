@@ -1,1 +1,66 @@
-{% extends "base.html" %}{% block heading %}Daily Check-in{% endblock %}{% block content %}<section class="card center"><h2>🎁 Daily Reward</h2><p>Claim UGX 1,000 once per day.</p>{% if claimed %}<button class="dark full" disabled>✓ Claimed today</button>{% else %}<form method="post"><button class="primary full">Claim UGX 1,000 Reward</button></form>{% endif %}</section><section class="card"><h2>How it works</h2><p>The reward is credited to your account balance after a successful claim.</p></section>{% endblock %}
+{% extends "base.html" %}
+{% block heading %}Daily Check-in{% endblock %}
+{% block content %}
+<section class="checkin-bonus card">
+  <div class="checkin-bonus-icon" aria-hidden="true">
+    <svg viewBox="0 0 48 48"><path d="M24 4c-4 8-11 13-11 22a11 11 0 0 0 22 0c0-9-7-14-11-22Z"/><path d="M10 28c-3 2-5 5-5 9a8 8 0 0 0 15 4"/></svg>
+  </div>
+  <div class="checkin-bonus-copy">
+    <h2>Daily Oil Bonus</h2>
+    <p>Earn <strong>UGX 1,000</strong> every day</p>
+  </div>
+  {% if claimed %}
+  <button class="checkin-claimed" disabled><span>✓</span> Claimed</button>
+  {% else %}
+  <form method="post" class="checkin-claim-form"><button class="checkin-claim" type="submit">Claim UGX 1,000</button></form>
+  {% endif %}
+</section>
+
+<section class="checkin-timer-card card">
+  <h3><span class="checkin-blue-icon">◷</span> Next Check-in Available</h3>
+  <div class="checkin-countdown" id="checkin-countdown" data-seconds="{{ seconds_left }}">
+    <span id="countdown-hours">00</span><i>:</i><span id="countdown-minutes">00</span><i>:</i><span id="countdown-seconds">00</span>
+  </div>
+  <p class="checkin-reset-note">Resets at midnight (00:00)</p>
+</section>
+
+{% if claimed %}
+<section class="checkin-time-card card">
+  <div class="checkin-blue-icon">▣</div>
+  <div><h3>Checked in today at</h3><p>{{ checked_label }}</p></div>
+</section>
+{% endif %}
+
+<section class="checkin-how-card card">
+  <h3><span class="checkin-blue-icon">♔</span> How it works</h3>
+  <ul>
+    <li>Check in once every 24 hours to earn <strong>UGX 1,000</strong></li>
+    <li>Bonus is added directly to your balance</li>
+    <li>Come back daily — don't miss a day!</li>
+    <li>Check-in resets at midnight each day</li>
+  </ul>
+</section>
+<script>
+(function(){
+ const root=document.getElementById('checkin-countdown');
+ if(!root)return;
+ let remaining=Math.max(0,Number(root.dataset.seconds)||0);
+ const h=document.getElementById('countdown-hours');
+ const m=document.getElementById('countdown-minutes');
+ const s=document.getElementById('countdown-seconds');
+ function paint(){
+   const hours=Math.floor(remaining/3600);
+   const minutes=Math.floor((remaining%3600)/60);
+   const seconds=remaining%60;
+   h.textContent=String(hours).padStart(2,'0');
+   m.textContent=String(minutes).padStart(2,'0');
+   s.textContent=String(seconds).padStart(2,'0');
+ }
+ paint();
+ const timer=setInterval(function(){
+   if(remaining>0){remaining--;paint();}
+   else{clearInterval(timer);root.setAttribute('aria-label','Next check-in is available. Refresh this page.');}
+ },1000);
+})();
+</script>
+{% endblock %}

@@ -1,5 +1,6 @@
 import os,sqlite3,secrets
-from datetime import datetime,date
+from datetime import datetime,date,timedelta
+from zoneinfo import ZoneInfo
 from functools import wraps
 from flask import Flask,render_template,request,redirect,url_for,session,flash
 from werkzeug.security import generate_password_hash,check_password_hash
@@ -12,9 +13,14 @@ with con() as c:
  c.executescript("""CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY,username TEXT UNIQUE,phone TEXT,password TEXT,invite TEXT UNIQUE,referrer INTEGER,balance INTEGER DEFAULT 0,created TEXT);
  CREATE TABLE IF NOT EXISTS tx(id INTEGER PRIMARY KEY,user_id INTEGER,kind TEXT,amount INTEGER,note TEXT,status TEXT,created TEXT);
  CREATE TABLE IF NOT EXISTS projects(id INTEGER PRIMARY KEY,user_id INTEGER,product TEXT,price INTEGER,daily INTEGER,created TEXT);
- CREATE TABLE IF NOT EXISTS checkins(user_id INTEGER,day TEXT,UNIQUE(user_id,day));
+ CREATE TABLE IF NOT EXISTS checkins(user_id INTEGER,day TEXT,checked_at TEXT,UNIQUE(user_id,day));
  CREATE TABLE IF NOT EXISTS requests(id INTEGER PRIMARY KEY,user_id INTEGER,kind TEXT,amount INTEGER,phone TEXT,name TEXT,status TEXT,created TEXT);
  CREATE TABLE IF NOT EXISTS announcements(id INTEGER PRIMARY KEY,title TEXT NOT NULL,body TEXT NOT NULL,created TEXT NOT NULL);""")
+ # Migrate databases created before check-in timestamps were stored.
+ cols={row["name"] for row in c.execute("PRAGMA table_info(checkins)").fetchall()}
+ if "checked_at" not in cols:
+  c.execute("ALTER TABLE checkins ADD COLUMN checked_at TEXT")
+
 def user():
  if "uid" not in session:return None
  with con() as c:return c.execute("SELECT * FROM users WHERE id=?",(session["uid"],)).fetchone()
@@ -116,12 +122,26 @@ def withdraw():
 @app.route("/checkin",methods=["GET","POST"])
 @need
 def checkin():
- today=date.today().isoformat();u=user()
+ tz=ZoneInfo("Africa/Kampala")
+ now=datetime.now(tz)
+ today=now.date().isoformat()
+ u=user()
  with con() as c:
-  claimed=c.execute("SELECT 1 FROM checkins WHERE user_id=? AND day=?",(u["id"],today)).fetchone() is not None
+  row=c.execute("SELECT checked_at FROM checkins WHERE user_id=? AND day=?",(u["id"],today)).fetchone()
+  claimed=row is not None
+  checked_at=row["checked_at"] if row else None
   if request.method=="POST" and not claimed:
-   now=datetime.now().isoformat();c.execute("INSERT INTO checkins VALUES(?,?)",(u["id"],today));c.execute("UPDATE users SET balance=balance+1000 WHERE id=?",(u["id"],));c.execute("INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)",(u["id"],"Bonus",1000,"Daily check-in reward","Completed",now));claimed=True;flash("UGX 1,000 check-in reward added.")
- return render_template("checkin.html",claimed=claimed)
+   stamp=now.isoformat(timespec="seconds")
+   c.execute("INSERT INTO checkins(user_id,day,checked_at) VALUES(?,?,?)",(u["id"],today,stamp))
+   c.execute("UPDATE users SET balance=balance+1000 WHERE id=?",(u["id"],))
+   c.execute("INSERT INTO tx(user_id,kind,amount,note,status,created) VALUES(?,?,?,?,?,?)",(u["id"],"Bonus",1000,"Daily check-in reward","Completed",stamp))
+   claimed=True
+   checked_at=stamp
+   flash("UGX 1,000 check-in reward added.")
+  reset_at=datetime.combine(now.date()+timedelta(days=1),datetime.min.time(),tzinfo=tz)
+  seconds_left=max(0,int((reset_at-now).total_seconds()))
+ checked_label=(datetime.fromisoformat(checked_at).strftime("%I:%M %p") if checked_at else ("Earlier today" if claimed else None))
+ return render_template("checkin.html",claimed=claimed,checked_at=checked_at,checked_label=checked_label,seconds_left=seconds_left,reset_at=reset_at.isoformat())
 @app.route("/history")
 @need
 def history():

@@ -301,3 +301,46 @@ html[data-theme="light"] .product .info p { color:#53624f !important; }
 html[data-theme="light"] .product .info p b { color:#31553a !important; font-weight:700; }
 html[data-theme="light"] .product { background:#fffdf5; border-color:#bdcda8; box-shadow:0 4px 12px rgba(39,73,35,.12); }
 html[data-theme="light"] .product .invest-btn { background:#398b53; color:#fff; }
+
+
+/* Daily check-in page */
+.checkin-bonus{display:flex;align-items:center;gap:12px;padding:16px;margin:12px 0 16px}
+.checkin-bonus-icon{width:58px;height:58px;flex:0 0 58px;border-radius:18px;background:#17191d;display:grid;place-items:center;box-shadow:0 4px 12px #0002}
+.checkin-bonus-icon svg{width:34px;height:34px;fill:none;stroke:#f8f8f5;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.checkin-bonus-copy{flex:1;min-width:0}
+.checkin-bonus-copy h2{margin:0 0 5px!important;font-size:16px!important}
+.checkin-bonus-copy p{margin:0;color:#aaa19a;font-size:12px;line-height:1.4}
+.checkin-bonus-copy p strong{color:#398b53}
+.checkin-claimed,.checkin-claim{border:0;border-radius:28px;padding:12px 14px;font-weight:700;font-size:12px;white-space:nowrap}
+.checkin-claimed{background:#17191d;color:#d2d2d0;opacity:.68}
+.checkin-claim{background:#398b53;color:white}
+.checkin-claim-form{margin:0}
+.checkin-timer-card{padding:16px!important}
+.checkin-timer-card h3,.checkin-time-card h3,.checkin-how-card h3{margin:0 0 13px;font-size:15px}
+.checkin-blue-icon{color:#2582f4;font-size:22px;font-weight:700;margin-right:7px;display:inline-block;vertical-align:middle}
+.checkin-countdown{display:flex;align-items:center;justify-content:center;gap:8px;padding:17px 8px;background:#38332f;border-radius:16px;color:#f7f5f3;font-size:30px;font-weight:750;letter-spacing:3px;font-variant-numeric:tabular-nums}
+.checkin-countdown i{font-style:normal;color:#aaa19a}
+.checkin-reset-note{text-align:center;margin:13px 0 1px;color:#aaa19a;font-size:12px}
+.checkin-time-card{display:flex;align-items:center;gap:10px;padding:16px!important}
+.checkin-time-card .checkin-blue-icon{font-size:24px;margin:0}
+.checkin-time-card h3{margin:0 0 3px}
+.checkin-time-card p{margin:0;color:#aaa19a;font-size:13px}
+.checkin-how-card{padding:16px!important}
+.checkin-how-card h3{margin-bottom:9px}
+.checkin-how-card ul{list-style:none;padding:0;margin:0}
+.checkin-how-card li{position:relative;padding-left:18px;margin:10px 0;color:#aaa19a;font-size:12px;line-height:1.45}
+.checkin-how-card li:before{content:"•";position:absolute;left:1px;color:#aaa19a;font-size:17px;top:-2px}
+.checkin-how-card li strong{color:#2582f4}
+html[data-theme="light"] .checkin-bonus,
+html[data-theme="light"] .checkin-timer-card,
+html[data-theme="light"] .checkin-time-card,
+html[data-theme="light"] .checkin-how-card{background:#fffdf5;border-color:#bdcda8;box-shadow:0 5px 14px rgba(39,73,35,.12)}
+html[data-theme="light"] .checkin-bonus-icon{background:#173c2b}
+html[data-theme="light"] .checkin-bonus-copy p,
+html[data-theme="light"] .checkin-reset-note,
+html[data-theme="light"] .checkin-time-card p,
+html[data-theme="light"] .checkin-how-card li{color:#667361}
+html[data-theme="light"] .checkin-countdown{background:#e8e1d9;color:#2b2926}
+html[data-theme="light"] .checkin-countdown i{color:#716b65}
+html[data-theme="light"] .checkin-claimed{background:#e8e1d9;color:#4c514b}
+@media(max-width:390px){.checkin-bonus{gap:9px;padding:12px}.checkin-bonus-icon{width:46px;height:46px;flex-basis:46px;border-radius:14px}.checkin-bonus-icon svg{width:29px;height:29px}.checkin-bonus-copy h2{font-size:14px!important}.checkin-bonus-copy p{font-size:11px}.checkin-claimed,.checkin-claim{font-size:10px;padding:10px 9px}.checkin-countdown{font-size:25px;gap:5px;padding:15px 5px;letter-spacing:2px}}
