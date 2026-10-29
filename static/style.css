@@ -290,3 +290,14 @@ html[data-theme="light"] .support-link-copy small{color:#536b50}
 html[data-theme="light"] .support-link-arrow{color:#267b45}
 html[data-theme="light"] .support-safety-icon{background:#e1ecd4}
 @media(max-width:390px){.support-link-card{gap:10px;padding:13px 12px}.support-link-icon{width:46px;height:46px;flex-basis:46px}.support-link-copy strong{font-size:15px}.support-link-copy small{font-size:11px}}
+
+/* Light theme: make Products text as readable as the Home cards */
+html[data-theme="light"] .product .row b,
+html[data-theme="light"] .product .info b { color:#174b31; }
+html[data-theme="light"] .product .row strong,
+html[data-theme="light"] .product .blue,
+html[data-theme="light"] .product .info p .blue { color:#2877c7 !important; font-weight:700; }
+html[data-theme="light"] .product .info p { color:#53624f !important; }
+html[data-theme="light"] .product .info p b { color:#31553a !important; font-weight:700; }
+html[data-theme="light"] .product { background:#fffdf5; border-color:#bdcda8; box-shadow:0 4px 12px rgba(39,73,35,.12); }
+html[data-theme="light"] .product .invest-btn { background:#398b53; color:#fff; }
