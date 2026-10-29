@@ -270,8 +270,12 @@ def projects():
 @need
 def team():
  u=user()
- with con() as c:refs=c.execute("SELECT username,created FROM users WHERE referrer=?",(u["id"],)).fetchall()
- return render_template("team.html",refs=refs,invite=request.url_root.rstrip("/")+"/register?invite="+u["invite"])
+ with con() as c:
+  refs=c.execute("SELECT username,created FROM users WHERE referrer=?",(u["id"],)).fetchall()
+  earnings=c.execute("""SELECT COALESCE(SUM(amount),0) total FROM tx
+      WHERE user_id=? AND lower(kind)='referral commission'
+      AND lower(status)='completed'""",(u["id"],)).fetchone()["total"]
+ return render_template("team.html",refs=refs,earnings=int(earnings or 0),invite=request.url_root.rstrip("/")+"/register?invite="+u["invite"])
 @app.route("/deposit",methods=["GET","POST"])
 @need
 def deposit():
