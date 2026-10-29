@@ -400,3 +400,13 @@ html[data-theme="light"] .agent-detail{background:#fff;color:#4b554f}
 html[data-theme="light"] .secondary{background:#e5eee2;color:#255c39;border-color:#bdcfae}
 html[data-theme="dark"] .agent-instructions{background:#eaf7f0;color:#263d30}
 html[data-theme="dark"] .agent-detail{background:#fff;color:#4b554f}
+
+/* Error and failure messages */
+.notice.error,
+.notice.failed,
+.notice.danger,
+.notice.failure {
+    color: #ff3333 !important;
+    border-color: #ff3333 !important;
+    background-color: #fff0f0 !important;
+}
