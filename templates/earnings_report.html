@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Live Earnings Verification</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f3f6fa;padding:16px;color:#172033}
+h2{color:#123d70}.card{background:white;padding:14px;margin:12px 0;border-radius:10px;box-shadow:0 2px 8px #0001}
+p{margin:7px 0;overflow-wrap:anywhere}.good{color:green;font-weight:bold}
+.warn{color:#b45309;font-weight:bold}.muted{color:#667085}
+</style>
+</head>
+<body>
+<h2>Live Daily Earnings Verification</h2>
+<p class="muted">Read-only report from the active application database.</p>
+{% if not rows %}
+<p>No purchased products were found.</p>
+{% endif %}
+{% for r in rows %}
+<div class="card">
+<h3>{{ r.username }} — {{ r.product }}</h3>
+<p>Project ID: {{ r.id }}</p>
+<p>Purchase time: {{ r.created }}</p>
+<p>Daily income: UGX {{ "{:,}".format(r.daily|int) }}</p>
+<p>Completed 24-hour periods: {{ r.due }}</p>
+<p>Credited days: {{ r.credited }} </p>
+<p>Expected income: UGX {{ "{:,}".format(r.expected) }}</p>
+<p>Recorded earnings: UGX {{ "{:,}".format(r.actual) }}</p>
+<p>Current customer balance: UGX {{ "{:,}".format(r.balance|int) }}</p>
+<p class="{% if r.status == 'CREDITED' %}good{% else %}warn{% endif %}">Status: {{ r.status }}</p>
+</div>
+{% endfor %}
+</body>
+</html>

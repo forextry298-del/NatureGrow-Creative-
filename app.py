@@ -724,3 +724,54 @@ def ng_ensure_deposit_pending_request():
 ng_ensure_deposit_pending_request()
 
 if __name__=="__main__":app.run(debug=True)
+
+
+@app.route("/admin/earnings-report")
+@ng_admin_required
+def ng_earnings_report():
+ from datetime import datetime
+ with con() as c:
+  rows = c.execute("""
+   SELECT p.*, u.username, u.balance,
+          COALESCE((SELECT COUNT(*) FROM project_earnings e
+                    WHERE e.project_id=p.id),0) AS credited_days,
+          COALESCE((SELECT SUM(e.amount) FROM project_earnings e
+                    WHERE e.project_id=p.id),0) AS credited_total
+   FROM projects p
+   LEFT JOIN users u ON u.id=p.user_id
+   ORDER BY p.id DESC
+  """).fetchall()
+
+ report = []
+ now = datetime.now()
+
+ for p in rows:
+  try:
+   start = datetime.fromisoformat(str(p["created"]).replace("Z","+00:00"))
+   if start.tzinfo:
+    start = start.astimezone().replace(tzinfo=None)
+   elapsed = max(0, int((now-start).total_seconds() // 86400))
+   due = min(max(1,int(p["days"] or 60)), elapsed)
+  except (ValueError, TypeError):
+   elapsed, due = 0, 0
+
+  credited = int(p["credited_days"] or 0)
+  expected = due * int(p["daily"] or 0)
+  actual = int(p["credited_total"] or 0)
+
+  if credited >= due and actual >= expected:
+   status = "CREDITED"
+  elif due > credited:
+   status = "DUE - NOT YET CREDITED"
+  else:
+   status = "CHECK RECORDS"
+
+  report.append({
+   "id":p["id"], "username":p["username"] or "Unknown",
+   "product":p["product"], "created":p["created"],
+   "daily":p["daily"], "due":due, "credited":credited,
+   "expected":expected, "actual":actual,
+   "balance":p["balance"] or 0, "status":status
+  })
+
+ return render_template("earnings_report.html", rows=report)
