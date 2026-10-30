@@ -608,7 +608,14 @@ def admin_panel():
   announcements = c.execute('SELECT title,body,created FROM announcements ORDER BY id DESC LIMIT 50').fetchall()
   requests_user_col = {x['name'] for x in c.execute('PRAGMA table_info(users)').fetchall()}
   # Admin listing supports older databases with a different full-name column.
-  product_rows = list(P)
+  controls = {r["product_id"]: r for r in c.execute("SELECT * FROM product_controls").fetchall()}
+  product_rows = []
+  for product in P:
+   item = dict(product)
+   control = controls.get(product["id"])
+   item["locked"] = bool(control["locked"]) if control else False
+   item["income_enabled"] = bool(control["income_enabled"]) if control else True
+   product_rows.append(item)
  return render_template('admin.html', tab=tab, q=q, counts=counts, users=users, deposits=deposits, withdrawals=withdrawals, teams=teams, announcements=announcements, product_rows=product_rows)
 
 

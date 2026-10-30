@@ -45,7 +45,21 @@
  <section class="admin-card"><h3>Recent announcements</h3>{% for a in announcements %}<div style="padding:10px 0;border-bottom:1px solid #48564a"><b>{{a.title}}</b><p>{{a.body}}</p><small class="admin-time">{{a.created[11:16] if a.created and a.created|length>=16 else ''}}</small></div>{% else %}<p class="admin-empty">No announcements yet.</p>{% endfor %}</section>
  {% elif tab=='products' %}
  <section class="admin-card"><h3>Products and images</h3><p class="admin-muted">Changes apply to the product list and future purchases. Use JPG, PNG or WEBP images.</p>
- {% for p in product_rows %}<article class="admin-product"><img src="{{url_for('static',filename='images/'+p.image)}}" alt="{{p.name}}" onerror="this.style.opacity='.25'"><div><b>{{p.name}}</b><p>{{money(p.price)}} · Daily {{money(p.daily)}} · {{p.days}} days</p><span class="admin-pill {{'bad' if p.get('sold_out') else 'good'}}">{{'Sold out' if p.get('sold_out') else 'Available'}}</span></div><form method="post" enctype="multipart/form-data" class="admin-form"><input type="hidden" name="action" value="edit_product"><input type="hidden" name="tab" value="products"><input type="hidden" name="product_id" value="{{p.id}}"><input name="name" value="{{p.name}}" required placeholder="Product name"><div class="admin-grid2"><label>Price (UGX)<input type="number" name="price" min="0" value="{{p.price}}" required></label><label>Daily income (UGX)<input type="number" name="daily" min="0" value="{{p.daily}}" required></label><label>Validity days<input type="number" name="days" min="1" value="{{p.days}}" required></label><label>Replace image<input type="file" name="image" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"></label></div><label><input type="checkbox" name="sold_out" value="1" {{'checked' if p.get('sold_out') else ''}}> Mark sold out</label><button class="admin-btn">Save product</button></form></article>{% endfor %}</section>
+ {% for p in product_rows %}<article class="admin-product"><img src="{{url_for('static',filename='images/'+p.image)}}" alt="{{p.name}}" onerror="this.style.opacity='.25'"><div><b>{{p.name}}</b><p>{{money(p.price)}} · Daily {{money(p.daily)}} · {{p.days}} days</p><span class="admin-pill {{'bad' if p.get('sold_out') else 'good'}}">{{'Sold out' if p.get('sold_out') else 'Available'}}</span></div><form method="post" enctype="multipart/form-data" class="admin-form"><input type="hidden" name="action" value="edit_product"><input type="hidden" name="tab" value="products"><input type="hidden" name="product_id" value="{{p.id}}"><input name="name" value="{{p.name}}" required placeholder="Product name"><div class="admin-grid2"><label>Price (UGX)<input type="number" name="price" min="0" value="{{p.price}}" required></label><label>Daily income (UGX)<input type="number" name="daily" min="0" value="{{p.daily}}" required></label><label>Validity days<input type="number" name="days" min="1" value="{{p.days}}" required></label><label>Replace image<input type="file" name="image" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"></label></div><label><input type="checkbox" name="sold_out" value="1" {{'checked' if p.get('sold_out') else ''}}> Mark sold out</label><button class="admin-btn">Save product</button></form>
+<div class="admin-actions">
+<form method="post" action="{{url_for('ng_admin_product',pid=p.id)}}">
+<input type="hidden" name="locked" value="{{'0' if p.locked else '1'}}">
+<input type="hidden" name="income_enabled" value="{{'1' if p.income_enabled else '0'}}">
+<button class="admin-btn">{{'Unlock Product' if p.locked else 'Lock Product'}}</button>
+</form>
+<form method="post" action="{{url_for('ng_admin_product',pid=p.id)}}">
+<input type="hidden" name="locked" value="{{'1' if p.locked else '0'}}">
+<input type="hidden" name="income_enabled" value="{{'1' if not p.income_enabled else '0'}}">
+<button class="admin-btn secondary">{{'Resume Daily Income' if not p.income_enabled else 'Pause Daily Income'}}</button>
+</form>
+</div>
+<p class="admin-muted">Purchases: {{'Locked' if p.locked else 'Open'}} · Daily income: {{'Paused' if not p.income_enabled else 'Active'}}</p>
+</article>{% endfor %}</section>
  {% endif %}
 </div>
 {% endblock %}
