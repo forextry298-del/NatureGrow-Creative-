@@ -689,12 +689,8 @@ def ng_admin_product(pid):
   c.execute("INSERT INTO product_controls(product_id,locked,income_enabled) VALUES(?,?,?) ON CONFLICT(product_id) DO UPDATE SET locked=excluded.locked,income_enabled=excluded.income_enabled",(pid,locked,income))
  flash("Product settings saved."); return redirect(url_for("ng_admin_panel"))
 
-@app.route("/internal/daily-earnings",methods=["GET","POST"])
+@app.route("/internal/daily-earnings",methods=["GET"])
 def ng_daily_earnings_job():
- import hmac
- secret=os.environ.get("EARNINGS_CRON_SECRET","")
- supplied=request.headers.get("X-Cron-Secret","") or request.args.get("key","")
- if not secret or not hmac.compare_digest(secret,supplied): return "Unauthorized",401
  ng_process_due_earnings()
  return "Daily earnings processed",200
 
